@@ -1,0 +1,17 @@
+---
+- hosts: all
+  remote_user: root
+  roles:
+    - role: hostname
+      hostname: relay2
+
+    - role: containerized_relay
+
+    - role: iptables_restrict
+      dports:
+        - 2470
+        - 2471  # metrics
+
+    - role: tls_proxy
+      hostname: relay2.fire.hose.cam
+      upstream: "127.0.0.1:2470"

@@ -1,0 +1,5 @@
+- name: get repo
+  ansible.builtin.git:
+    repo: 'https://github.com/bluesky-social/indigo.git'
+    dest: /root/indigo
+    version: main

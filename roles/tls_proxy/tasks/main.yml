@@ -1,0 +1,50 @@
+
+- name: install nginx
+  ansible.builtin.apt:
+    name: nginx
+
+- name: add nginx config for domain
+  ansible.builtin.template:
+    src: templates/host.j2
+    dest: /etc/nginx/sites-available/{{ hostname }}
+
+- name: enable domain config
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/{{ hostname }}
+    dest: /etc/nginx/sites-enabled/{{ hostname }}
+    state: link
+
+- name: check config syntax
+  ansible.builtin.command: nginx -t
+
+- name: symlink certbot
+  ansible.builtin.file:
+    src: /snap/bin/certbot
+    dest: /usr/bin/certbot
+    state: link
+
+- name: enable and start nginx
+  ansible.builtin.systemd_service:
+    name: nginx
+    state: started
+    enabled: true
+
+- name: install certbot
+  community.general.snap:
+    name:
+      - certbot
+    classic: true
+
+- name: symlink certbot
+  ansible.builtin.file:
+    src: /snap/bin/certbot
+    dest: /usr/bin/certbot
+    state: link
+
+- name: check for cert
+  ansible.builtin.command: "certbot certificates -d {{ hostname }}"
+  register: certbot_certs
+
+- name: install cert
+  ansible.builtin.command: "certbot run -d {{ hostname }} --nginx -n --agree-tos"
+  when: "hostname not in certbot_certs.stdout"

@@ -15,5 +15,5 @@
         - 2471  # metrics
 
     - role: tls_proxy
-      hostname: relay2.fire.hose.cam
+      hostname: "{{ relay_host }}"
       upstream: "127.0.0.1:2470"

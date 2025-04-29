@@ -1,5 +1,89 @@
+- name: create relay user
+  ansible.builtin.user:
+    name: relay
+    shell: /bin/bash
+    create_home: yes
+
+- name: weird linger thing needed for podman compose up to do its systemd thing
+  ansible.builtin.command: 'loginctl enable-linger relay'
+
+- name: install deps
+  ansible.builtin.apt:
+    name:
+      - podman
+      - podman-compose
+      - postgresql
+      - postgresql-contrib
+
+# for now we assume it's fine to run with pg db in the default place
+- name: enable and start postgres
+  ansible.builtin.systemd_service:
+    name: postgresql
+    state: started
+    enabled: true
+
+- name: check if db is set up for relay
+  become: true
+  become_user: postgres
+  ansible.builtin.command: 'psql -qtA -c "\du relay"'
+  register: relay_role_check
+
+- name: copy pg relay role and db creation script
+  ansible.builtin.template:
+    src: templates/setup-relay-db.sql.j2
+    dest: /var/local/setup-relay-db.sql
+    owner: postgres
+  when: "'relay' not in relay_role_check.stdout"
+
+- name: create postgres relay role and db
+  become: true
+  become_user: postgres
+  ansible.builtin.command: 'psql -f /var/local/setup-relay-db.sql'
+  when: "'relay' not in relay_role_check.stdout"
+
+- name: use docker.io for podman short name search
+  ansible.builtin.lineinfile:
+    path: /etc/containers/registries.conf
+    insertafter: '^# unqualified-search-registries = \["example\.com"\]\n'
+    line: 'unqualified-search-registries = ["docker.io"]'
+
+- name: copy relay .env file
+  ansible.builtin.template:
+    src: templates/.env.j2
+    dest: /home/relay/.env
+    owner: relay
+
+- name: ensure persist dir for relay exists
+  ansible.builtin.file:
+    path: "{{ relay_log_dir }}"
+    state: directory
+    recurse: yes
+    owner: relay
+
+- name: ensure log dir for relay exists
+  ansible.builtin.file:
+    path: "{{ relay_persist_dir }}"
+    state: directory
+    recurse: yes
+    owner: relay
+
+- name: copy compose file
+  ansible.builtin.template:
+    src: templates/podman-compose.yml.j2
+    dest: /home/relay/podman-compose.yml
+    owner: relay
+
 - name: get repo
+  become: true
+  become_user: relay
   ansible.builtin.git:
     repo: 'https://github.com/bluesky-social/indigo.git'
-    dest: /root/indigo
+    dest: /home/relay/indigo
     version: main
+  notify:
+    - Build relay
+
+- name: blah
+  ansible.builtin.command: echo hi
+  notify:
+    - Start relay

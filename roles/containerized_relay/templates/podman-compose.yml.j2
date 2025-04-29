@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  relay:
+    env_file: /home/relay/.env
+    build:
+      context: ./indigo
+      dockerfile: cmd/relay/Dockerfile
+    command: "dumb-init sh -c '/relay serve 2>&1 | svlogd -b100000000 {{ relay_log_dir }}'"
+    volumes:
+      - /run/postgresql:/run/postgresql
+      - type: bind
+        source: {{ relay_persist_dir }}
+        target: {{ relay_persist_dir }}
+      - type: bind
+        source: {{ relay_log_dir }}
+        target: {{ relay_log_dir }}
+    network_mode: host

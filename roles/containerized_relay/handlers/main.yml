@@ -1,0 +1,37 @@
+- name: Build relay
+  become: true
+  become_user: relay
+  ansible.builtin.command:
+    cmd: podman compose build
+    chdir: /home/relay/
+  register: build_relay
+  notify:
+    - Debug build relay
+    - Restart relay
+
+- name: Debug build relay
+  ansible.builtin.debug:
+    var: build_relay
+
+- name: Restart relay
+  become: true
+  become_user: relay
+  ansible.builtin.command:
+    cmd: podman compose down
+    chdir: /home/relay/
+  notify:
+    - Start relay
+
+- name: Start relay
+  become: true
+  become_user: relay
+  ansible.builtin.command:
+    cmd: podman compose up -d
+    chdir: /home/relay/
+  register: start_relay
+  notify:
+    - Debug start relay
+
+- name: Debug start relay
+  ansible.builtin.debug:
+    var: start_relay

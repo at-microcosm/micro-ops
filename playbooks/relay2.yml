@@ -6,6 +6,8 @@
       hostname: relay2
 
     - role: containerized_relay
+      relay_persist_dir: /home/relay/relay-persist
+      relay_log_dir: /var/log/relay
 
     - role: iptables_restrict
       dports:

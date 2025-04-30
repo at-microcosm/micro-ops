@@ -46,3 +46,5 @@ you need to tell the relay to actually connect to PDSs
 - [ ] fix container build/restart stuff so it sucks less
 - [ ] figure out what probably needs to be done to make it come up automatically on reboot? will it?
 - [ ] restart policy?
+- [ ] set up node exporter metrics
+

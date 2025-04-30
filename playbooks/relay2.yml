@@ -3,7 +3,7 @@
   remote_user: root
   roles:
     - role: hostname
-      hostname: relay2
+      hostname: "{{ relay_hostname }}"
 
     - role: containerized_relay
       relay_persist_dir: /home/relay/relay-persist

@@ -12,6 +12,7 @@ note that bluesky's production relay is still "non-archival" and the sync1.1 for
 - [ ] run `apt-get update && apt-get upgrade` and probably `reboot` on it after that.
 - [ ] set up DNS: point an A-record (and maybe an AAAA) from your relay domain to your new server.
 - [ ] put your SSH pubkey on the new server for root and make sure pubkey auth and root login are enabled. (disable all password auth)
+    - note: if you get a message like "please log in as user ubuntu", check `/root/.ssh/authorized_keys` for some garbage to remove
 - [ ] install tailscale (probably optional)
 
 

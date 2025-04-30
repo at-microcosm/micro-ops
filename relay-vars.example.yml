@@ -1,3 +1,4 @@
+relay_hostname: relay2
 relay_db_password: <pw>
 relay_admin_password: <pw>
 relay_host: eg relay2.fire.hose.cam

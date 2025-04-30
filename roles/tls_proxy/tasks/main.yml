@@ -17,12 +17,6 @@
 - name: check config syntax
   ansible.builtin.command: nginx -t
 
-- name: symlink certbot
-  ansible.builtin.file:
-    src: /snap/bin/certbot
-    dest: /usr/bin/certbot
-    state: link
-
 - name: enable and start nginx
   ansible.builtin.systemd_service:
     name: nginx

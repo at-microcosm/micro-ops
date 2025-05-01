@@ -7,6 +7,7 @@ services:
       context: ./indigo
       dockerfile: cmd/relay/Dockerfile
     command: "dumb-init sh -c '/relay serve 2>&1 | svlogd -b100000000 {{ relay_log_dir }}'"
+    restart: on-failure
     volumes:
       - /run/postgresql:/run/postgresql
       - type: bind

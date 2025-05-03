@@ -1,0 +1,16 @@
+[Unit]
+Description=AppViewLite
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=appviewlite
+Group=appviewlite
+Type=simple
+ExecStart=/usr/bin/dotnet run -c Release -- --allow-new-database 1 --appviewlite_firehoses atproto.africa
+WorkingDirectory=/home/appviewlite/AppViewLite/src/AppViewLite.Web
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

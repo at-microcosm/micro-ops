@@ -1,0 +1,9 @@
+---
+- hosts: all
+  remote_user: root
+  roles:
+    - role: appviewlitethings
+
+    - role: tls_proxy
+      hostname: "appviewlite.bsky.bad-example.com"
+      upstream: "127.0.0.1:61750"

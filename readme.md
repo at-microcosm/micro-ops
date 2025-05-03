@@ -48,3 +48,12 @@ you need to tell the relay to actually connect to PDSs
 - [x] restart policy?
 - [ ] set up node exporter metrics
 
+
+## appviewlite
+
+(very work-in-progress)
+
+```bash
+ansible-playbook playbooks/appviewlite.yml -i appviewlite,
+```
+

@@ -1,0 +1,31 @@
+- name: create appviewlite user
+  ansible.builtin.user:
+    name: appviewlite
+    shell: /bin/bash
+    create_home: yes
+
+- name: install deps
+  ansible.builtin.apt:
+    name:
+      - dotnet-sdk-9.0
+
+- name: get repo
+  become: true
+  become_user: appviewlite
+  ansible.builtin.git:
+    repo: 'https://github.com/uniphil/AppViewLite.git'
+    dest: /home/appviewlite/AppViewLite
+    version: no-https-redirect
+
+- name: copy systemd service file
+  ansible.builtin.template:
+    src: templates/appviewlite.service.j2
+    dest: /etc/systemd/system/appviewlite.service
+
+- name: enable and start appviewlite
+  ansible.builtin.systemd_service:
+    name: appviewlite
+    # daemon_reload: true
+    # state: restarted
+    state: started
+    enabled: true

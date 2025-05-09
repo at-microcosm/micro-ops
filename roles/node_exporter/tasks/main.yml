@@ -1,0 +1,29 @@
+- name: Create node_exporter user
+  ansible.builtin.user:
+    name: node_exporter
+    shell: /bin/false
+    create_home: no
+
+- name: Get node_exporter
+  ansible.builtin.unarchive:
+    src: https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}/node_exporter-{{ node_exporter_version }}.{{ node_exporter_arch }}.tar.gz
+    dest: /root/
+    remote_src: yes
+
+- name: Copy to bin path
+  ansible.builtin.copy:
+    src: /root/node_exporter-{{ node_exporter_version }}.{{ node_exporter_arch }}/node_exporter
+    dest: /usr/local/bin/node_exporter
+    mode: a+x
+    remote_src: yes
+
+- name: Copy systemd service file
+  ansible.builtin.template:
+    src: templates/node_exporter.service.j2
+    dest: /etc/systemd/system/node_exporter.service
+
+- name: enable and start node_exporter
+  ansible.builtin.systemd_service:
+    name: node_exporter
+    state: started
+    enabled: true

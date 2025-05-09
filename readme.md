@@ -57,3 +57,9 @@ you need to tell the relay to actually connect to PDSs
 ansible-playbook playbooks/appviewlite.yml -i appviewlite,
 ```
 
+
+## node exporter
+
+```bash
+ansible-playbook playbooks/node-exporter.yml -e node_exporter_version=1.8.2 -e node_exporter_arch=linux-amd64 -i appviewlite,
+```

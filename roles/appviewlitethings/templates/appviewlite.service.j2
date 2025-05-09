@@ -8,6 +8,8 @@ User=appviewlite
 Group=appviewlite
 Type=simple
 ExecStart=/usr/bin/dotnet run -c Release -- --allow-new-database 1 --appviewlite_firehoses atproto.africa
+Environment="APPVIEWLITE_BIND_URLS=https://0.0.0.0:443,http://0.0.0.0:80"
+## should use (after building first) /home/appviewlite/AppViewLite/src/AppViewLite.Web/bin/Release/net9.0/AppViewLite.Web
 WorkingDirectory=/home/appviewlite/AppViewLite/src/AppViewLite.Web
 Restart=always
 RestartSec=3

@@ -1,3 +1,13 @@
+# head up: this role isn't great!
+# we put in an nginx template, which ansible is good at...
+# but then certbot modifies that file, because it's good at nginx
+# so next time you run, ansible will undo certbot's work.
+#
+# i don't want to manually set up crons for now, so i'm doing the worse thing:
+# - copying the nginx template only happens the first time.
+#
+# hopefully this means that ssl doesn't get undone if you rerun, *but* it will
+# mean that updates to the nginx template won't be applied.
 
 - name: install nginx
   ansible.builtin.apt:
@@ -7,6 +17,7 @@
   ansible.builtin.template:
     src: templates/host.j2
     dest: /etc/nginx/sites-available/{{ hostname }}
+    force: false # will not update on changes to the template!
 
 - name: enable domain config
   ansible.builtin.file:

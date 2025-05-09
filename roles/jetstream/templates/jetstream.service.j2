@@ -1,0 +1,16 @@
+[Unit]
+Description=Jetstream
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=jetstream
+Group=jetstream
+Type=simple
+ExecStart=/home/jetstream/jetstream/jetstream --ws-url {{ upstream_relay_host }}/xrpc/com.atproto.sync.subscribeRepos --data-dir /home/jetstream/jetstream-data/ --zstd-dictionary-path ./pkg/models/zstd_dictionary
+Restart=always
+RestartSec=2
+StartLimitIntervalSec=0
+
+[Install]
+WantedBy=multi-user.target

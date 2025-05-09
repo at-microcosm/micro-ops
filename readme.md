@@ -47,6 +47,7 @@ you need to tell the relay to actually connect to PDSs
 - [ ] figure out what probably needs to be done to make it come up automatically on reboot? will it?
 - [x] restart policy?
 - [ ] set up node exporter metrics
+- [ ] fix nginx/https stuff
 
 
 ## appviewlite
@@ -63,3 +64,29 @@ ansible-playbook playbooks/appviewlite.yml -i appviewlite,
 ```bash
 ansible-playbook playbooks/node-exporter.yml -e node_exporter_version=1.8.2 -e node_exporter_arch=linux-amd64 -i appviewlite,
 ```
+
+
+## jetstream
+
+### pre-ansible prep
+
+- [ ] select a server. low-cost VPS is likely sufficient, you need more than 1GB per hour of disk for event TTL (replay from cursor) retention. spin it up with ubuntu server 24.04.
+- [ ] run `apt-get update && apt-get upgrade` and probably `reboot` on it after that.
+- [ ] set up DNS: point an A-record (and maybe an AAAA) from your relay domain to your new server.
+- [ ] put your SSH pubkey on the new server for root and make sure pubkey auth and root login are enabled. (disable all password auth)
+    - note: if you get a message like "please log in as user ubuntu", check `/root/.ssh/authorized_keys` for some garbage to remove
+- [ ] install tailscale (probably optional)
+
+
+### ansible
+
+- [ ] copy `jetstream-vars.example.yml` to `jetstream-vars.yml` and replace the values:
+- [ ] run the playbook!
+  ```bash
+  ansible-playbook playbooks/jetstream.yml -e "@jetstream-vars.yml" -i jetstream2,
+  ```
+
+  to force rebuilding,
+  ```bash
+  ansible-playbook playbooks/jetstream.yml -e "@jetstream-vars.yml" -e force_build=1 -i jetstream2,
+  ```

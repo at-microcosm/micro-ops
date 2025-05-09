@@ -1,0 +1,3 @@
+jetstream_hostname: jetstream
+jetstream_host: eg jetstream.fire.hose.cam
+upstream_relay_host: eg wss://relay.fire.hose.cam

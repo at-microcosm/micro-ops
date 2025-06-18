@@ -62,9 +62,14 @@ ansible-playbook playbooks/appviewlite.yml -i appviewlite,
 ## node exporter
 
 ```bash
-ansible-playbook playbooks/node-exporter.yml -e node_exporter_version=1.8.2 -e node_exporter_arch=linux-amd64 -i appviewlite,
+ansible-playbook playbooks/node-exporter.yml -e node_exporter_version=1.8.2 -e node_exporter_arch=linux-amd64 -i appviewlite, -u root
 ```
 
+### node exporter (raspi)
+
+```bash
+ansible-playbook playbooks/node-exporter.yml -e node_exporter_version=1.9.1 -e node_exporter_arch=linux-arm64 -i cassiopeia, -u pi
+```
 
 ## jetstream
 

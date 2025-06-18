@@ -1,6 +1,6 @@
 ---
 - hosts: all
-  remote_user: root
+  become: yes
   roles:
     - role: node_exporter
       node_exporter_version: "{{ node_exporter_version }}"

@@ -90,3 +90,34 @@ ansible-playbook playbooks/node-exporter.yml -e node_exporter_version=1.8.2 -e n
   ```bash
   ansible-playbook playbooks/jetstream.yml -e "@jetstream-vars.yml" -e force_build=1 -i jetstream2,
   ```
+
+
+## constellation on raspberry pi 5 w/ nvme
+
+- [ ] copy `constellation-vars.example.yml` to `constellation-vars.yml` and replace the values:
+- [ ] run the playbook!
+  ```bash
+  ansible-playbook playbooks/constellation.yml -e "@constellation-vars.yml" -i cassiopeia,
+  ```
+
+WARNING: this will OVERWRITE the external device specified!
+
+WARNING: this will build constellation (and so librocksdb) on the pi, which takes an age
+
+NOTE: this will _enable_ a systemd unit, but not start it (so that the backup restore can succeed). when the pi is rebooted it should autostart.
+
+### constellation: restore from backup
+
+after running the main constellation playbook (above),
+
+```bash
+ansible-playbook playbooks/constellation.yml -e "@constellation-vars.yml" -e restore_backup=1 -i cassiopeia,
+```
+
+WARNING: this can take a whileeeee
+
+## to force building
+
+```bash
+ansible-playbook playbooks/constellation.yml -e "@constellation-vars.yml" -e force_build=1 -i cassiopeia, -v
+```

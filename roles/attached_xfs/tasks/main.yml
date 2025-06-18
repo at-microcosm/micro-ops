@@ -1,0 +1,39 @@
+- name: install xfsprogs
+  ansible.builtin.apt:
+    name: xfsprogs
+
+- name: format {{ device }} as xfs
+  become: true
+  community.general.filesystem:
+    fstype: xfs
+    dev: "{{ device }}"
+
+- name: mount {{ device }} at /mnt
+  become: true
+  ansible.posix.mount:
+    path: /mnt
+    src: "{{ device }}"
+    fstype: xfs
+    state: mounted
+
+- name: put swapfile on the external device to reduce sd wear
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/dphys-swapfile
+    regexp: '^#CONF_SWAPFILE=/var/swap$'
+    line: 'CONF_SWAPFILE=/mnt/swap'
+  register: swap_location
+
+- name: be a bit more generous with swap (2G)
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/dphys-swapfile
+    regexp: '^CONF_SWAPSIZE=\d+$'
+    line: 'CONF_SWAPSIZE=2048'
+  register: swap_size
+
+- name: switch swap over
+  become: true
+  ansible.builtin.shell:
+    dphys-swapfile setup && dphys-swapfile swapon
+  when: swap_location.changed or swap_size.changed

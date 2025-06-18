@@ -1,0 +1,17 @@
+- name: install cifs-utils
+  ansible.builtin.apt:
+    name: cifs-utils
+
+- name: ensure backup mountpoint exists
+  ansible.builtin.file:
+    path: /home/{{ local_user }}/backup
+    state: directory
+
+- name: mount {{ nas_location }} at /home/{{ local_user }}/backup
+  become: true
+  ansible.posix.mount:
+    src: "{{ nas_location }}"
+    path: /home/{{ local_user }}/backup
+    opts: user={{ nas_user }},uid={{ local_user }},password={{ nas_pass }}
+    fstype: cifs
+    state: mounted

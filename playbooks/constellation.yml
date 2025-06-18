@@ -1,0 +1,25 @@
+---
+
+# prepare a raspi with raspbian lite (64bit) with an ssh key configured
+# set up your hostname during imaging
+
+# connect external storage (ssd) for the data, prefereably nvme
+
+# use constellation-vars.example.yml to get things configured
+
+- hosts: all
+  remote_user: "{{ pi_user }}"
+  roles:
+
+    - role: attached_xfs
+      device: "{{ storage_device }}"
+
+    - role: attached_nas
+      local_user: "{{ pi_user }}"
+      nas_user: "{{ nas_user }}"
+      nas_pass: "{{ nas_pass }}"
+      nas_location: "{{ nas_location }}"
+
+    - role: constellation
+      user: "{{ pi_user }}"
+      nas_backup_folder: "{{ nas_backup_folder }}"

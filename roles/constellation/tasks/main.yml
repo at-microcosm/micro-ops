@@ -1,0 +1,62 @@
+- name: install git
+  become: true
+  ansible.builtin.apt:
+    name:
+      - git
+      - pkg-config
+      - libssl-dev
+      - libclang-dev
+
+- name: install rust by rustup
+  shell: curl https://sh.rustup.rs -sSf | sh -s -- -y
+
+- name: get repo
+  ansible.builtin.git:
+    repo: 'https://github.com/at-microcosm/links.git'
+    dest: /home/{{ user }}/links
+    version: constellation/filtering # tmp
+  register: repo
+
+- name: build constellation (slow!)
+  ansible.builtin.command:
+    cmd: /home/{{ user }}/.cargo/bin/cargo build --release
+    chdir: /home/{{ user }}/links/constellation
+  when: repo.changed or force_build is defined
+
+- name: create db dir to restore backup to if requested
+  become: true
+  ansible.builtin.file:
+    path: /mnt/constellation-index
+    state: directory
+    owner: "{{ user }}"
+    group: "{{ user }}"
+  when: restore_backup is defined
+
+- name: restore from backup if requested (slow!!)
+  ansible.builtin.command:
+    cmd: >
+      /home/{{ user }}/links/target/release/rocks-restore-from-backup
+      --from-backup-dir /home/{{ user }}/backup/{{ nas_backup_folder }}
+      --to-data-dir /mnt/constellation-index
+  when: restore_backup is defined
+
+- name: copy systemd service file
+  become: true
+  ansible.builtin.template:
+    src: templates/constellation.service.j2
+    dest: /etc/systemd/system/constellation.service
+  register: service
+
+- name: enable constellation
+  become: true
+  ansible.builtin.systemd_service:
+    name: constellation
+    daemon_reload: "{{ service.changed }}"
+    enabled: true
+
+- name: start constellation if requested
+  become: true
+  ansible.builtin.systemd_service:
+    name: constellation
+    state: "{% if repo.changed or service.changed %}re{% endif %}started"
+  when: start is defined

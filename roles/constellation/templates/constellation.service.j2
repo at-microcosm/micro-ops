@@ -1,0 +1,18 @@
+[Unit]
+Description=Constellation backlink index
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User={{ user }}
+Group={{ user }}
+Type=simple
+WorkingDirectory=/home/{{ user }}/links/constellation
+ExecStart=/home/{{ user }}/links/target/release/main --backend rocks --data /mnt/constellation-index/ --jetstream "{{ jetstream }}" --backup "/home/{{ user }}/backup/{{ nas_backup_folder }}" --backup-interval 6 --max-old-backups 20
+LimitNOFILE=16384
+Restart=always
+RestartSec=2
+StartLimitIntervalSec=0
+
+[Install]
+WantedBy=multi-user.target

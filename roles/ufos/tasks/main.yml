@@ -3,6 +3,7 @@
   ansible.builtin.apt:
     name:
       - git
+      - snapper
 
 - name: install rust by rustup
   shell: curl https://sh.rustup.rs -sSf | sh -s -- -y
@@ -45,3 +46,37 @@
     name: ufos
     state: "{% if repo.changed or service.changed %}re{% endif %}started"
   when: start is defined
+
+- name: check if snapper config is needed
+  become: true
+  ansible.builtin.command:
+    cmd: sudo snapper list-configs --columns config
+  register: snapper_existence_check
+
+- name: set up snapper if needed
+  become: true
+  ansible.builtin.command:
+    cmd: sudo snapper -c ufos-db create-config /mnt/data
+  when: "'ufos-db' not in snapper_existence_check.stdout"
+
+- name: copy snapper config file
+  become: true
+  ansible.builtin.template:
+    src: templates/ufos-db-snapper.j2
+    dest: /etc/snapper/configs/ufos-db
+
+- name: copy rsync backup script
+  become: true
+  ansible.builtin.template:
+    src: templates/nas-backup.sh.j2
+    dest: /usr/local/bin/nas-backup.sh
+    mode: u+rx
+
+- name: Creates a cron file under /etc/cron.d
+  become: true
+  ansible.builtin.cron:
+    name: backup ufos db to nas
+    minute: "0"
+    hour: "*/6"
+    user: root
+    job: /usr/local/bin/nas-backup.sh

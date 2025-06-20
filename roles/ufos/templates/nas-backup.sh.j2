@@ -1,0 +1,24 @@
+#!/bin/bash
+set -euo pipefail
+
+RSYNC_DEST="/home/{{ user }}/backup/ufos/"
+RSYNC_BACKUP="/home/{{ user }}/backup/ufos-backup/"
+
+# if the rsync backup dir exists, remove it: don't keep incremental ufos history
+if [ -d "$RSYNC_BACKUP" ]; then
+  rm -r "$RSYNC_BACKUP"
+fi
+
+LATEST_SNAP=$(sudo snapper --csvout -c ufos-db list --columns number | tail -n1)
+if [ "$LATEST_SNAP" = "0" ]; then
+  >&2 echo "could not find a snapshot to back up. bye."
+  exit 1
+fi
+
+RSYNC_SRC="/mnt/data/.snapshots/$LATEST_SNAP/snapshot/"
+
+rsync -ahP \
+  --exclude ".snapshots/" \
+  --delete-delay \
+  --backup --backup-dir "$RSYNC_BACKUP" \
+  "$RSYNC_SRC" "$RSYNC_DEST"

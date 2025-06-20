@@ -16,6 +16,7 @@
     path: /mnt
     src: "{{ device }}"
     fstype: btrfs
+    opts: noatime
     state: mounted
 
 - name: check if the subvolume exists

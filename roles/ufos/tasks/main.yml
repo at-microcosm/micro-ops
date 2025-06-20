@@ -1,0 +1,47 @@
+- name: install git
+  become: true
+  ansible.builtin.apt:
+    name:
+      - git
+
+- name: install rust by rustup
+  shell: curl https://sh.rustup.rs -sSf | sh -s -- -y
+
+- name: get repo
+  ansible.builtin.git:
+    repo: 'https://github.com/at-microcosm/links.git'
+    dest: /home/{{ user }}/links
+    version: main
+  register: repo
+
+- name: build ufos (slow!)
+  ansible.builtin.command:
+    cmd: /home/{{ user }}/.cargo/bin/cargo build --release
+    chdir: /home/{{ user }}/links/ufos
+  when: repo.changed or force_build is defined
+
+- name: restore data from backup if requested
+  ansible.builtin.command:
+    cmd: rsync -ahP "/home/{{ user }}/backup/ufos/" /mnt/data/
+  when: restore_backup is defined
+
+- name: copy systemd service file
+  become: true
+  ansible.builtin.template:
+    src: templates/ufos.service.j2
+    dest: /etc/systemd/system/ufos.service
+  register: service
+
+- name: enable ufos
+  become: true
+  ansible.builtin.systemd_service:
+    name: ufos
+    daemon_reload: "{{ service.changed }}"
+    enabled: true
+
+- name: start ufos if requested
+  become: true
+  ansible.builtin.systemd_service:
+    name: ufos
+    state: "{% if repo.changed or service.changed %}re{% endif %}started"
+  when: start is defined

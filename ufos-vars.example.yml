@@ -1,0 +1,7 @@
+pi_user: eg phil
+storage_device: eg /dev/nvme0n1
+nas_user: eg backup
+nas_pass: eg password
+nas_location: eg //yournas.local/wherever
+jetstream: eg us-west-2
+nas_backup_folder: eg ufos-data

@@ -1,0 +1,72 @@
+- name: install btrfs-progs
+  become: true
+  ansible.builtin.apt:
+    name: btrfs-progs
+
+- name: format {{ device }} as btrfs
+  become: true
+  community.general.filesystem:
+    fstype: btrfs
+    dev: "{{ device }}"
+    # force: true
+
+- name: mount {{ device }} at /mnt
+  become: true
+  ansible.posix.mount:
+    path: /mnt
+    src: "{{ device }}"
+    fstype: btrfs
+    state: mounted
+
+- name: check if the subvolume exists
+  become: true
+  ansible.builtin.command:
+    cmd: btrfs subvolume list /mnt
+  register: subvol_check
+
+- name: create subvolume at /mnt/data if needed
+  become: true
+  ansible.builtin.command:
+    cmd: btrfs subvolume create /mnt/data
+  when: "'data' not in subvol_check.stdout"
+
+- name: ensure the data subvolume is owned by {{ local_user }}
+  become: true
+  ansible.builtin.file:
+    path: /mnt/data
+    owner: "{{ local_user }}"
+    group: "{{ local_user }}"
+
+- name: check if the swapfile exists
+  ansible.builtin.command:
+    cmd: ls -1 /mnt
+  register: subvol_check
+
+- name: create btrfs swapfile at /mnt/swapfile
+  become: true
+  ansible.builtin.command:
+    cmd: btrfs filesystem mkswapfile --size 2g /mnt/swapfile
+  when: "'swapfile' not in subvol_check.stdout"
+
+- name: configure dphys-swapfile to use the swapfile on btrfs
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/dphys-swapfile
+    regexp: '^#CONF_SWAPFILE=/var/swap$'
+    line: 'CONF_SWAPFILE=/mnt/swapfile'
+  register: swap_location
+
+- name: hopefully redundantly tell dphys-swapfile about the swap size
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/dphys-swapfile
+    regexp: '^CONF_SWAPSIZE=\d+$'
+    line: 'CONF_SWAPSIZE=2048'
+  register: swap_size
+
+- name: switch swap over
+  become: true
+  ansible.builtin.shell: >
+    sudo swapoff -a &&
+    dphys-swapfile swapon
+  when: swap_location.changed or swap_size.changed

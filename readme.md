@@ -126,3 +126,34 @@ WARNING: this can take a whileeeee
 ```bash
 ansible-playbook playbooks/constellation.yml -e "@constellation-vars.yml" -e force_build=1 -i cassiopeia, -v
 ```
+
+
+## UFOs on raspberry pi 5 w/ nvme
+
+- [ ] copy `ufos-vars.example.yml` to `ufos-vars.yml` and replace the values:
+- [ ] run the playbook!
+  ```bash
+  ansible-playbook playbooks/ufos.yml -e "@ufos-vars.yml" -i cooper,
+  ```
+
+WARNING: this will OVERWRITE the external device specified!
+
+WARNING: this will build ufos (and so librocksdb) on the pi, which takes an age
+
+NOTE: this will _enable_ a systemd unit, but not start it (so that the backup restore can succeed). when the pi is rebooted it should autostart.
+
+### ufos: restore from backup
+
+after running the main ufos playbook (above),
+
+```bash
+ansible-playbook playbooks/ufos.yml -e "@ufos-vars.yml" -e restore_backup=1 -i cooper,
+```
+
+WARNING: this can take a whileeeee
+
+## to force building
+
+```bash
+ansible-playbook playbooks/ufos.yml -e "@ufos-vars.yml" -e force_build=1 -i cooper, -v
+```

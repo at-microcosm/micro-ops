@@ -1,4 +1,5 @@
 - name: install xfsprogs
+  become: true
   ansible.builtin.apt:
     name: xfsprogs
 

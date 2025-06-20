@@ -1,0 +1,19 @@
+[Unit]
+Description=UFOs lexicon explorer
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User={{ user }}
+Group={{ user }}
+Type=simple
+WorkingDirectory=/home/{{ user }}/links/ufos
+ExecStart=/home/{{ user }}/links/target/release/ufos --data /mnt/data/ --jetstream "{{ jetstream }}"
+Environment="RUST_LOG=info"
+LimitNOFILE=16384
+Restart=always
+RestartSec=2
+StartLimitIntervalSec=0
+
+[Install]
+WantedBy=multi-user.target

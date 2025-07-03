@@ -157,3 +157,10 @@ WARNING: this can take a whileeeee
 ```bash
 ansible-playbook playbooks/ufos.yml -e "@ufos-vars.yml" -e force_build=1 -i cooper, -v
 ```
+
+
+## node-exporter on original raspi model b
+
+```bash
+ansible-playbook playbooks/node-exporter.yml -e node_exporter_version=1.9.1 -e node_exporter_arch=linux-armv6 -i <hostname>, -u root
+```

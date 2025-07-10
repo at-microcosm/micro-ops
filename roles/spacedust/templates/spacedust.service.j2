@@ -1,0 +1,18 @@
+[Unit]
+Description=Spacedust interaction firehose
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User={{ user }}
+Group={{ user }}
+Type=simple
+WorkingDirectory=/home/{{ user }}/links/spacedust
+ExecStart=/home/{{ user }}/links/target/release/spacedust --jetstream "{{ jetstream }}"
+Environment="RUST_LOG=info"
+Restart=always
+RestartSec=2
+StartLimitIntervalSec=0
+
+[Install]
+WantedBy=multi-user.target

@@ -1,4 +1,4 @@
-- name: install git
+- name: install os deps
   become: true
   ansible.builtin.apt:
     name:

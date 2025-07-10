@@ -10,18 +10,9 @@
 - hosts: all
   remote_user: "{{ pi_user }}"
   roles:
+    - role: hostname
+      hostname: "{{ hostname }}"
 
-    - role: attached_btrfs
-      device: "{{ storage_device }}"
-      local_user: "{{ pi_user }}"
-
-    - role: attached_nas
-      local_user: "{{ pi_user }}"
-      nas_user: "{{ nas_user }}"
-      nas_pass: "{{ nas_pass }}"
-      nas_location: "{{ nas_location }}"
-
-    - role: ufos
+    - role: spacedust
       user: "{{ pi_user }}"
-      nas_backup_folder: "{{ nas_backup_folder }}"
       jetstream: "{{ jetstream }}"

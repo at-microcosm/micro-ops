@@ -1,0 +1,86 @@
+# installs caddy and sets up a systemd service.
+#
+# you need to:
+# 1. create /etc/caddy/Caddyfile
+# 2. start the systemd service
+
+- name: Create caddy user
+  ansible.builtin.user:
+    name: caddy
+    home: /var/lib/caddy
+    shell: /bin/false
+
+- name: Get caddy
+  ansible.builtin.unarchive:
+    src: https://github.com/caddyserver/caddy/releases/download/v{{ caddy_version }}/caddy_{{ caddy_version }}_{{ arch }}.tar.gz
+    dest: /usr/bin/
+    remote_src: yes
+
+- name: Copy caddy systemd service file
+  ansible.builtin.copy:
+    src: files/caddy.service
+    dest: /etc/systemd/system/caddy.service
+
+# - name: Download caddy
+#   ansible.builtin.get_url:
+#     url:
+#     dest: /var/lib/caddy/
+#     mode: '0755'
+
+
+# # started from https://peterbabic.dev/blog/how-to-install-caddy-using-ansible/
+
+# # installs caddy, but leaves starting its systemd service up to you
+# # (put )
+
+# - name: Install required packages
+#   ansible.builtin.apt:
+#     name:
+#       - debian-keyring
+#       - debian-archive-keyring
+#       - apt-transport-https
+
+# # - name: Add Cloudsmith repository
+# #   ansible.builtin.apt_key:
+# #     url: "https://dl.cloudsmith.io/public/caddy/stable/gpg.key"
+
+# - name: Add Cloudsmith repository
+#   deb822_repository:
+#     name: caddy
+#     types: deb
+#     uris: ttps://dl.cloudsmith.io/public/caddy/stable/deb/debian
+#     suites: '{{ ansible_distribution_release }}'
+#     components: stable
+#     architectures: amd64
+#     signed_by: https://dl.cloudsmith.io/public/caddy/stable/gpg.key
+#   register: apt
+
+# # - name: Add Caddy repository to sources list
+# #   apt_repository:
+# #     repo:
+# #       "deb https://dl.cloudsmith.io/public/caddy/stable/deb/debian
+# #       any-version main"
+# #     filename: caddy-stable
+# #   register: apt
+
+# # - name: Add Caddy src repository to sources list
+# #   apt_repository:
+# #     repo:
+# #       "deb-src https://dl.cloudsmith.io/public/caddy/stable/deb/debian
+# #       any-version main"
+# #     filename: caddy-stable
+
+# - name: Refresh apt cache if needed
+#   ansible.builtin.apt:
+#     update_cache: yes
+#   # when: apt.changed
+
+# - name: Install Caddy
+#   ansible.builtin.apt:
+#     name: caddy
+
+# # - name: Enable and start Caddy service
+# #   service:
+# #     name: caddy
+# #     enabled: yes
+# #     state: started

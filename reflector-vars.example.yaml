@@ -1,0 +1,7 @@
+version: "v0.0.1"
+arch: "linux_amd64"
+caddy_version: "2.10.2"
+domain: "example.com"
+service_id: "#pocket_prefs"
+service_type: "PocketPreferences"
+service_endpoint: "https://bad-example.com"

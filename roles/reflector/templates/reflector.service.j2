@@ -1,0 +1,18 @@
+[Unit]
+Description=Reflector
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=reflector
+Group=reflector
+Type=simple
+WorkingDirectory=/home/reflector/
+ExecStart=/home/reflector/reflector --domain "{{ domain }}" --id "{{ service_id }}" --type "{{ service_type }}" --service-endpoint "{{ service_endpoint }}"
+Environment="RUST_LOG=info"
+Restart=always
+RestartSec=2
+StartLimitIntervalSec=0
+
+[Install]
+WantedBy=multi-user.target

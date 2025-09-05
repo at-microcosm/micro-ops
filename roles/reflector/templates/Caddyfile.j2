@@ -1,0 +1,15 @@
+{
+  on_demand_tls {
+    ask http://{{ reflector_localaddr }}/ask
+  }
+}
+
+https:// {
+  tls {
+    on_demand
+  }
+  request_body {
+    max_size 100KB
+  }
+  reverse_proxy {{ reflector_localaddr }}
+}

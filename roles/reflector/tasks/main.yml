@@ -1,0 +1,87 @@
+# - name: install os deps
+#   ansible.builtin.apt:
+#     name:
+#       - git
+#       - cmake
+
+- name: Create reflector user
+  ansible.builtin.user:
+    name: reflector
+    shell: /bin/false
+
+# - name: install rust by rustup
+#   become: true
+#   become_user: reflector
+#   shell: curl https://sh.rustup.rs -sSf | sh -s -- -y
+
+# - name: get repo
+#   become: true
+#   become_user: reflector
+#   ansible.builtin.git:
+#     repo: 'https://github.com/at-microcosm/links.git'
+#     dest: /home/reflector/links
+#     version: main
+#   register: repo
+
+# - name: build reflector (slow!)
+#   become: true
+#   become_user: reflector
+#   ansible.builtin.command:
+#     cmd: /home/reflector/.cargo/bin/cargo build --release
+#     chdir: /home/reflector/links/reflector
+#   when: repo.changed or force_build is defined
+
+- name: get reflector
+  ansible.builtin.get_url:
+    url: https://github.com/at-microcosm/microcosm-rs/releases/download/reflector-{{ version }}/reflector_amd64
+    dest: /home/reflector/reflector
+    mode: '0755'
+  register: reflector
+
+- name: copy systemd service file
+  ansible.builtin.template:
+    src: templates/reflector.service.j2
+    dest: /etc/systemd/system/reflector.service
+  register: service
+
+- name: enable reflector
+  ansible.builtin.systemd_service:
+    name: reflector
+    daemon_reload: "{{ service.changed }}"
+    state: "{% if reflector.changed or service.changed %}re{% endif %}started"
+    enabled: true
+
+- name: create dir in /etc for caddy
+  ansible.builtin.file:
+    path: "/etc/caddy"
+    state: directory
+    owner: caddy
+    group: caddy
+    mode: "0700"
+
+- name: copy Caddyfile
+  ansible.builtin.template:
+    src: templates/Caddyfile.j2
+    dest: /etc/caddy/Caddyfile
+    owner: caddy
+    group: caddy
+    mode: "0700"
+  vars:
+    reflector_localaddr: "localhost:3001"
+  register: caddyfile
+
+- name: start or reload caddy
+  ansible.builtin.systemd_service:
+    name: caddy
+    state: "{% if caddyfile.changed  %}re{% endif %}started"
+
+- name: allow ports 80 and 443 (debian ufw, might break other hosts)
+  community.general.ufw:
+    rule: allow
+    to_port: "{{ item }}"
+    proto: tcp
+  with_items:
+    - "80"
+    - "443"
+
+

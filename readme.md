@@ -164,3 +164,9 @@ ansible-playbook playbooks/ufos.yml -e "@ufos-vars.yml" -e force_build=1 -i coop
 ```bash
 ansible-playbook playbooks/node-exporter.yml -e node_exporter_version=1.9.1 -e node_exporter_arch=linux-armv6 -i <hostname>, -u root
 ```
+
+## reflector
+
+```bash
+ansible-playbook playbooks/reflector.yml -e "@reflector-vars.yml" -i reflector,
+```

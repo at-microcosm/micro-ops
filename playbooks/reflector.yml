@@ -1,0 +1,19 @@
+---
+
+# prepare a server with debian and an ssh key configured
+
+# use reflector-vars.example.yml to get things configured
+
+- hosts: all
+  remote_user: "root"
+  roles:
+
+    - role: caddy
+      caddy_version: "{{ caddy_version }}"
+      arch: "{{ arch }}"
+
+    - role: reflector
+      domain: "{{ domain }}"
+      service_id: "{{ service_id }}"
+      service_type: "{{ service_type }}"
+      service_endpoint: "{{ service_endpoint }}"

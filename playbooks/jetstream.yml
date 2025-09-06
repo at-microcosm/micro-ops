@@ -1,17 +1,16 @@
 ---
 - hosts: all
-  remote_user: root
   roles:
-    - role: hostname
-      hostname: "{{ jetstream_hostname }}"
+    # - role: hostname
+    #   hostname: "{{ jetstream_hostname }}"
 
     - role: jetstream
 
-    - role: iptables_restrict
-      dports:
-        - 6008
-        - 6009  # metrics
+    # - role: iptables_restrict
+    #   dports:
+    #     - 6008
+    #     - 6009  # metrics
 
-    - role: tls_proxy
-      hostname: "{{ jetstream_host }}"
-      upstream: "127.0.0.1:6008"
+    # - role: tls_proxy
+    #   hostname: "{{ jetstream_host }}"
+    #   upstream: "127.0.0.1:6008"

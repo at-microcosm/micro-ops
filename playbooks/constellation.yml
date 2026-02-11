@@ -13,6 +13,7 @@
 
     - role: attached_xfs
       device: "{{ storage_device }}"
+      mnt_name: "{{ mnt_name }}"
 
     - role: attached_nas
       local_user: "{{ pi_user }}"
@@ -22,4 +23,5 @@
 
     - role: constellation
       user: "{{ pi_user }}"
+      mnt_name: "{{ mnt_name }}"
       nas_backup_folder: "{{ nas_backup_folder }}"

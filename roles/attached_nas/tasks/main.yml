@@ -1,4 +1,5 @@
 - name: install cifs-utils
+  become: true
   ansible.builtin.apt:
     name: cifs-utils
 

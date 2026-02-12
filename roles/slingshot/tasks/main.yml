@@ -55,7 +55,20 @@
     state: directory
     owner: slingshot
     group: slingshot
-    mode: '0740'
+    mode: '0700'
+
+- name: ensure ssh folder exists
+  ansible.builtin.file:
+    path: /home/slingshot/.ssh
+    state: directory
+    owner: slingshot
+    group: slingshot
+    mode: '0700'
+
+- name: configure authorized_keys for secondary access
+  ansible.builtin.copy:
+    dest: /home/slingshot/.ssh/authorized_keys
+    content: "{{ authorized_secondary_keys }}"
 
 - name: enable slingshot
   ansible.builtin.systemd_service:
@@ -70,4 +83,3 @@
     name: slingshot
     state: "{% if repo.changed or service.changed %}re{% endif %}started"
   when: start is defined
-

@@ -1,1 +1,4 @@
 remote_user: eg ubuntu
+# these gets placed on the primary
+authorized_secondary_keys: |
+  ssh-ed25519 AAAAC.....

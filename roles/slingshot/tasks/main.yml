@@ -1,0 +1,73 @@
+- name: install os deps
+  ansible.builtin.apt:
+    name:
+      - git
+      - cmake
+
+- name: create slingshot user
+  become: true
+  ansible.builtin.user:
+    name: slingshot
+    shell: /bin/bash
+    create_home: yes
+
+- name: install rust by rustup
+  become: true
+  become_user: slingshot
+  shell: curl https://sh.rustup.rs -sSf | sh -s -- -y
+
+- name: get repo
+  become: true
+  become_user: slingshot
+  ansible.builtin.git:
+    repo: 'https://tangled.org/microcosm.blue/microcosm-rs'
+    dest: /home/slingshot/microcosm-rs
+    version: slingshot-proxy-hydrate
+    force: true
+  register: repo
+
+- name: build slingshot (slow!)
+  become: true
+  become_user: slingshot
+  ansible.builtin.command:
+    cmd: /home/slingshot/.cargo/bin/cargo build --release
+    chdir: /home/slingshot/microcosm-rs/slingshot
+  when: repo.changed or force_build is defined
+
+- name: copy systemd service file
+  ansible.builtin.template:
+    src: templates/slingshot.service.j2
+    dest: /etc/systemd/system/slingshot.service
+  vars:
+    user: slingshot
+    bin: /home/slingshot/microcosm-rs/target/release/slingshot
+    workdir: /home/slingshot/microcosm-rs/slingshot
+    jetstream: wss://jetstream1.us-east.fire.hose.cam/subscribe
+    slingshot_cache_dir: /home/slingshot/data
+    tls_domain: dev.slingshot.microcosm.blue
+    acme_contact: phil@bad-example.com
+    certs_folder: /home/slingshot/certs
+  register: service
+
+- name: ensure certs folder exists
+  ansible.builtin.file:
+    path: /home/slingshot/certs
+    state: directory
+    owner: slingshot
+    group: slingshot
+    mode: '0740'
+
+- name: enable slingshot
+  ansible.builtin.systemd_service:
+    name: slingshot
+    daemon_reload: "{{ service.changed }}"
+    state: "{% if repo.changed or service.changed %}re{% endif %}started"
+    enabled: true
+
+- name: start slingshot if requested
+  become: true
+  ansible.builtin.systemd_service:
+    name: slingshot
+    state: "{% if repo.changed or service.changed %}re{% endif %}started"
+  when: start is defined
+

@@ -1,4 +1,16 @@
-remote_user: eg ubuntu
+slingshot_branch: main
+ssh_user: eg ubuntu
+tls_domain: dev.slingshot.microcosm.blue
+acme_contact: name@example.com
+acme_staging: true
+acme_secondary_name: asdf
+acme_primary_name: 10.10.10.10
+acme_sync_hc_ping: https://example.com/ping/uuid...
+
+# this gets placed on the secondaries
+acme_primary_known_hosts: |
+  10.10.10.10 ssh-ed25519 AAAAC..... 10.10.10.10
+
 # these gets placed on the primary
 authorized_secondary_keys: |
   ssh-ed25519 AAAAC.....

@@ -4,24 +4,32 @@ Wants=network-online.target
 After=network-online.target
 
 [Service]
-User={{ user }}
-Group={{ user }}
+User={{ service_user }}
+Group={{ service_user }}
 Type=simple
 ExecStart={{ bin }}
 WorkingDirectory={{ workdir }}
 LimitNOFILE=16384
 AmbientCapabilities=CAP_NET_BIND_SERVICE
-Environment="RUST_LOG=info,poem::listener::acme=trace"
-Environment="SLINGSHOT_JETSTREAM={{ jetstream }}"
-Environment="SLINGSHOT_CACHE_DIR={{ slingshot_cache_dir }}"
-Environment="SLINGSHOT_TLS_DOMAIN={{ tls_domain }}"
-Environment="SLINGSHOT_TLS_CERTS_PATH={{ certs_folder }}"
-Environment="SLINGSHOT_ACME_CONTACT={{ acme_contact }}"
-Environment="SLINGSHOT_ACME_STAGING=true"
-Environment="SLINGSHOT_COLLECT_METRICS=true"
 Restart=always
 RestartSec=2
 StartLimitIntervalSec=0
+
+Environment="RUST_LOG=info,poem::listener::acme=trace"
+Environment="SLINGSHOT_JETSTREAM={{ jetstream }}"
+Environment="SLINGSHOT_CACHE_DIR={{ slingshot_cache_dir }}"
+Environment="SLINGSHOT_COLLECT_METRICS=true"
+
+Environment="SLINGSHOT_TLS_DOMAIN={{ tls_domain }}"
+Environment="SLINGSHOT_TLS_CERTS_PATH={{ certs_folder }}"
+Environment="SLINGSHOT_WARN_INSECURE=true"
+
+{% if acme_primary | default(false) %}
+Environment="SLINGSHOT_ACME_CONTACT={{ acme_contact }}"
+{% if acme_staging %}Environment="SLINGSHOT_ACME_STAGING=true"{% endif %}
+{% elif acme_secondary | default(false) %}
+Environment="SLINGSHOT_ACME_CHALLENGE_REDIRECT=http://{{ acme_primary_name }}/.well-known/acme-challenge/"
+{% endif %}
 
 [Install]
 WantedBy=multi-user.target

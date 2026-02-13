@@ -6,4 +6,4 @@
   remote_user: "{{ ssh_user }}"
   roles:
     - role: slingshot
-      acme_primary: true
+      acme_secondary: true

@@ -22,7 +22,7 @@
   ansible.builtin.git:
     repo: 'https://tangled.org/microcosm.blue/microcosm-rs'
     dest: /home/slingshot/microcosm-rs
-    version: slingshot-proxy-hydrate
+    version: "{{ slingshot_branch }}"
     force: true
   register: repo
 
@@ -39,13 +39,11 @@
     src: templates/slingshot.service.j2
     dest: /etc/systemd/system/slingshot.service
   vars:
-    user: slingshot
+    service_user: slingshot
     bin: /home/slingshot/microcosm-rs/target/release/slingshot
     workdir: /home/slingshot/microcosm-rs/slingshot
     jetstream: wss://jetstream1.us-east.fire.hose.cam/subscribe
     slingshot_cache_dir: /home/slingshot/data
-    tls_domain: dev.slingshot.microcosm.blue
-    acme_contact: phil@bad-example.com
     certs_folder: /home/slingshot/certs
   register: service
 
@@ -69,6 +67,59 @@
   ansible.builtin.copy:
     dest: /home/slingshot/.ssh/authorized_keys
     content: "{{ authorized_secondary_keys }}"
+    owner: slingshot
+    group: slingshot
+  when: acme_primary | default(false)
+
+- name: configure known_hosts on secondaries for primary connection
+  ansible.builtin.copy:
+    dest: /home/slingshot/.ssh/known_hosts
+    content: "{{ acme_primary_known_hosts }}"
+    owner: slingshot
+    group: slingshot
+  when: acme_secondary | default(false)
+
+- name: create ssh key for acme secondary
+  become: true
+  become_user: slingshot
+  ansible.builtin.command:
+    cmd: ssh-keygen -t ed25519 -f /home/slingshot/.ssh/id_ed25519 -N '' -C '{{ acme_secondary_name }}'
+    creates: /home/slingshot/.ssh/id_ed25519.pub
+  register: acme_secondary_ssh_key
+  when: acme_secondary | default(false)
+
+- name: register ssh key for acme secondary
+  become: true
+  become_user: slingshot
+  ansible.builtin.command: cat /home/slingshot/.ssh/id_ed25519.pub
+  register: acme_secondary_ssh_key_value
+  when: acme_secondary_ssh_key.changed
+
+- name: show secondary ssh pubkey
+  become: true
+  become_user: slingshot
+  ansible.builtin.debug:
+    var: acme_secondary_ssh_key_value.stdout
+  when: acme_secondary_ssh_key.changed
+
+- name: copy cert sync file
+  ansible.builtin.template:
+    src: templates/secondary_cert_sync.sh.j2
+    dest: /home/slingshot/secondary_cert_sync.sh
+    owner: slingshot
+    mode: 'u=rwx,g=r,o=r'
+  vars:
+    certs_folder: /home/slingshot/certs
+  when: acme_secondary | default(false)
+
+- name: configure cert sync cronjob
+  ansible.builtin.cron:
+    user: slingshot
+    name: "sync certs"
+    job: "/home/slingshot/secondary_cert_sync.sh"
+    minute: "0"
+    hour: "2,14"
+  when: acme_secondary | default(false)
 
 - name: enable slingshot
   ansible.builtin.systemd_service:

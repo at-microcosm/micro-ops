@@ -170,3 +170,8 @@ ansible-playbook playbooks/node-exporter.yml -e node_exporter_version=1.9.1 -e n
 ```bash
 ansible-playbook playbooks/reflector.yml -e "@reflector-vars.yml" -i reflector,
 ```
+
+
+## slingshot
+
+see [./slingshot-networking.md](./slingshot-networking.md)

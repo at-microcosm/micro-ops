@@ -1,13 +1,21 @@
-slingshot_branch: main
 ssh_user: eg ubuntu
+
+slingshot_branch: main
+slingshot_cache_memory_mb: 2048
+slingshot_cache_disk_gb: 32
+slingshot_identity_memory_mb: 1024
+slingshot_identity_disk_gb: 8
+
 tls_domain: dev.slingshot.microcosm.blue
 acme_contact: name@example.com
 acme_staging: true
 acme_secondary_name: asdf
 acme_primary_name: 10.10.10.10
 acme_sync_hc_ping: https://example.com/ping/uuid...
+service_hc_ping: https://hc-ping.com/123....
 
 # this gets placed on the secondaries
+# find from primary with `cat /etc/ssh/ssh_host_ed25519_key.pub`
 acme_primary_known_hosts: |
   10.10.10.10 ssh-ed25519 AAAAC..... 10.10.10.10
 

@@ -6,6 +6,10 @@ all microcosm services, with a vault service providing access to the services
 (direct apps like allegedly and slingshot; and nginx for proxied apps like
 constellation and ufos) needing to actually terminate tls.
 
+_update_: should probably jump on the brand-new
+[`DNS-PERSIST-01` challenge](https://letsencrypt.org/2026/02/18/dns-persist-01.html#optional-expiration)
+instead of `DNS-01`.
+
 for now, slingshot does TLS via acme-http01 on a primary instance, with
 secondaries forwarding challenges to the primary via redirects, and retrieving
 certs from the primary over ssh via an rsync task.

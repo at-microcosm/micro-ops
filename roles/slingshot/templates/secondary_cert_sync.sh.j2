@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-rsync -avh '{{ acme_primary_name }}:{{ certs_folder }}/' '{{ certs_folder }}'
+rsync -avh '{{ acme_primary_ip }}:{{ certs_folder }}/' '{{ certs_folder }}'
 
 {% if acme_sync_hc_ping %}
 curl '{{ acme_sync_hc_ping }}'

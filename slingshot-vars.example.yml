@@ -10,7 +10,8 @@ tls_domain: dev.slingshot.microcosm.blue
 acme_contact: name@example.com
 acme_staging: true
 acme_secondary_name: asdf
-acme_primary_name: 10.10.10.10
+acme_primary_name: acme.dev.slingshot.microcosm.blue
+acme_primary_ip: 10.10.10.10
 acme_sync_hc_ping: https://example.com/ping/uuid...
 service_hc_ping: https://hc-ping.com/123....
 

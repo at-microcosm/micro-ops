@@ -12,18 +12,12 @@
 - name: mount {{ device }} at /mnt
   become: true
   ansible.posix.mount:
-    path: /mnt
-    src: "{{ device }}"
-    fstype: xfs
-    state: absent
-
-- name: mount {{ device }} at /mnt
-  become: true
-  ansible.posix.mount:
     path: /mnt/{{ mnt_name }}
     src: "{{ device }}"
     fstype: xfs
     state: mounted
+
+# TODO: move swap stuff to its own role
 
 # - name: put swapfile on the external device to reduce sd wear
 #   become: true

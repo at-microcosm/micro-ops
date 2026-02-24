@@ -1,0 +1,87 @@
+- name: create ref mirror user
+  ansible.builtin.user:
+    name: mirror
+    shell: /bin/bash
+    create_home: yes
+
+- name: create allegedly user
+  ansible.builtin.user:
+    name: allegedly
+    shell: /bin/bash
+    create_home: yes
+
+- name: install deps
+  ansible.builtin.apt:
+    name:
+      - postgresql # 16 for ubuntu 24.04
+      # - postgresql-contrib
+
+- name: ensure pg data directory
+  ansible.builtin.file:
+    path: "{{ pg_location }}"
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: '0700'
+
+- name: remove default pg cluster
+  ansible.builtin.command:
+    cmd: pg_dropcluster --stop 16 main
+  args:
+    removes: /var/lib/postgresql/16/main
+
+- name: recreate pg cluster in the right place
+  ansible.builtin.command:
+    cmd: "pg_createcluster 16 main --datadir={{ pg_location }}"
+  args:
+    creates: "{{ pg_location }}/PG_VERSION"
+
+- name: enable and start postgres
+  ansible.builtin.systemd_service:
+    name: postgresql
+    state: started
+    enabled: true
+
+- name: check if db is set up for mirror
+  become: true
+  become_user: postgres
+  ansible.builtin.command: 'psql -qtA -c "\du mirror"'
+  register: mirror_role_check
+
+- name: copy pg mirror role and db creation script
+  ansible.builtin.template:
+    src: templates/setup-mirror-db.sql.j2
+    dest: /tmp/setup-mirror-db.sql
+    owner: postgres
+  when: "'mirror' not in mirror_role_check.stdout"
+
+- name: create postgres mirror role and db
+  become: true
+  become_user: postgres
+  ansible.builtin.command: 'psql -f /tmp/setup-mirror-db.sql'
+  when: "'mirror' not in mirror_role_check.stdout"
+
+
+#---- golang for ref mirror ----#
+- name: get go-ing
+  become: true
+  become_user: mirror
+  ansible.builtin.shell:
+    chdir: /home/mirror/
+    cmd: |
+      set -e
+      curl -LO https://go.dev/dl/go1.26.0.linux-amd64.tar.gz
+      tar -xzf go1.26.0.linux-amd64.tar.gz
+    creates: /home/mirror/go/bin/go
+
+#---- rust for allegedly ----#
+- name: get rustup
+  become: true
+  become_user: allegedly
+  ansible.builtin.shell:
+    chdir: /home/allegedly
+    cmd: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+  args:
+    creates: "/home/allegedly/.cargo/bin/rustup"
+
+

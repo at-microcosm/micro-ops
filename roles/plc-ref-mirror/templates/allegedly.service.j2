@@ -1,0 +1,25 @@
+[Unit]
+Description=Allegedly (wrap mode)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=allegedly
+Group=allegedly
+Type=simple
+WorkingDirectory=/home/allegedly/
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+ExecStart=/home/allegedly/allegedly/target/release/allegedly wrap
+Environment="RUST_LOG=info"
+Environment="ALLEGEDLY_WRAP=http://localhost:6780"
+Environment="ALLEGEDLY_ACME_DOMAIN={{ tls_name }}"
+Environment="ALLEGEDLY_ACME_CACHE_PATH=/home/allegedly/certs"
+Environment="ALLEGEDLY_ACME_IPV6=true"
+Environment="ALLEGEDLY_EXPERIMENTAL_ACME_DOMAIN=experimental.{{ tls_name }}"
+Environment="ALLEGEDLY_EXPERIMENTAL_WRITE_UPSTREAM=true"
+Restart=always
+RestartSec=2
+StartLimitIntervalSec=0
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,18 @@
+[Unit]
+Description=PLC read replica (reference implementation)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=mirror
+Group=mirror
+Type=simple
+WorkingDirectory=/home/mirror/
+ExecStart=/home/mirror/plc-replica
+Environment="DATABASE_URL=sqlite:///mnt/{{ mnt_name }}/data/db.sqlite"
+Restart=always
+RestartSec=2
+StartLimitIntervalSec=0
+
+[Install]
+WantedBy=multi-user.target

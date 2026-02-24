@@ -10,57 +10,21 @@
     shell: /bin/bash
     create_home: yes
 
-- name: install deps
+- name: system dependencies
   ansible.builtin.apt:
     name:
-      - postgresql # 16 for ubuntu 24.04
-      # - postgresql-contrib
+      - build-essential # for CGO
+      - pkg-config # for rust ssl
+      - libssl-dev
+      - libclang-dev
 
-- name: ensure pg data directory
+- name: ensure db directory
   ansible.builtin.file:
-    path: "{{ pg_location }}"
+    path: "/mnt/{{ mnt_name }}/data"
     state: directory
-    owner: postgres
-    group: postgres
+    owner: mirror
+    group: mirror
     mode: '0700'
-
-- name: remove default pg cluster
-  ansible.builtin.command:
-    cmd: pg_dropcluster --stop 16 main
-  args:
-    removes: /var/lib/postgresql/16/main
-
-- name: recreate pg cluster in the right place
-  ansible.builtin.command:
-    cmd: "pg_createcluster 16 main --datadir={{ pg_location }}"
-  args:
-    creates: "{{ pg_location }}/PG_VERSION"
-
-- name: enable and start postgres
-  ansible.builtin.systemd_service:
-    name: postgresql
-    state: started
-    enabled: true
-
-- name: check if db is set up for mirror
-  become: true
-  become_user: postgres
-  ansible.builtin.command: 'psql -qtA -c "\du mirror"'
-  register: mirror_role_check
-
-- name: copy pg mirror role and db creation script
-  ansible.builtin.template:
-    src: templates/setup-mirror-db.sql.j2
-    dest: /tmp/setup-mirror-db.sql
-    owner: postgres
-  when: "'mirror' not in mirror_role_check.stdout"
-
-- name: create postgres mirror role and db
-  become: true
-  become_user: postgres
-  ansible.builtin.command: 'psql -f /tmp/setup-mirror-db.sql'
-  when: "'mirror' not in mirror_role_check.stdout"
-
 
 #---- golang for ref mirror ----#
 - name: get go-ing
@@ -74,14 +38,80 @@
       tar -xzf go1.26.0.linux-amd64.tar.gz
     creates: /home/mirror/go/bin/go
 
+- name: get go-didplc repo
+  become: true
+  become_user: mirror
+  ansible.builtin.git:
+    repo: 'https://github.com/did-method-plc/go-didplc.git'
+    dest: /home/mirror/go-didplc
+  register: mirror_repo
+
+- name: build plc-replica binary (takes a sec!)
+  become: true
+  become_user: mirror
+  ansible.builtin.shell:
+    cmd: CGO_ENABLED=1 /home/mirror/go/bin/go build -o /home/mirror/plc-replica -buildvcs=false ./cmd/plc-replica
+    chdir: /home/mirror/go-didplc
+  when: mirror_repo.changed or force_build is defined
+
+- name: copy plc-replica systemd service file
+  ansible.builtin.template:
+    src: templates/plc-replica.service.j2
+    dest: /etc/systemd/system/plc-replica.service
+  register: mirror_service
+
+- name: enable plc-replica
+  ansible.builtin.systemd_service:
+    name: plc-replica
+    daemon_reload: "{{ mirror_service.changed }}"
+    enabled: true
+
+- name: start plc-replica if requested
+  ansible.builtin.systemd_service:
+    name: plc-replica
+    state: "{% if mirror_repo.changed or mirror_service.changed %}re{% endif %}started"
+  when: start is defined
+
 #---- rust for allegedly ----#
 - name: get rustup
   become: true
   become_user: allegedly
   ansible.builtin.shell:
     chdir: /home/allegedly
-    cmd: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    cmd: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
   args:
     creates: "/home/allegedly/.cargo/bin/rustup"
 
+- name: get allegedly repo
+  become: true
+  become_user: allegedly
+  ansible.builtin.git:
+    repo: 'https://tangled.org/microcosm.blue/Allegedly'
+    dest: /home/allegedly/allegedly
+  register: allegedly_repo
 
+- name: build allegedly (takes a min!)
+  become: true
+  become_user: allegedly
+  ansible.builtin.command:
+    cmd: /home/allegedly/.cargo/bin/cargo build --release --bin allegedly
+    chdir: /home/allegedly/allegedly/
+  when: allegedly_repo.changed or force_build is defined
+
+- name: copy allegedly systemd service file
+  ansible.builtin.template:
+    src: templates/allegedly.service.j2
+    dest: /etc/systemd/system/allegedly.service
+  register: allegedly_service
+
+- name: enable allegedly
+  ansible.builtin.systemd_service:
+    name: allegedly
+    daemon_reload: "{{ allegedly_service.changed }}"
+    enabled: true
+
+- name: start allegedly if requested
+  ansible.builtin.systemd_service:
+    name: allegedly
+    state: "{% if allegedly_repo.changed or allegedly_service.changed %}re{% endif %}started"
+  when: start is defined

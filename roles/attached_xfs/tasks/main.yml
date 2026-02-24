@@ -9,7 +9,7 @@
     fstype: xfs
     dev: "{{ device }}"
 
-- name: mount {{ device }} at /mnt
+- name: mount {{ device }} at /mnt/{{ mnt_name }}
   become: true
   ansible.posix.mount:
     path: /mnt/{{ mnt_name }}

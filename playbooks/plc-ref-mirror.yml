@@ -2,14 +2,14 @@
 - hosts: all
   remote_user: root
   roles:
-    # - role: attached_xfs
-    #   device: "{{ storage_device }}"
-    #   mnt_name: "{{ mnt_name }}"
+    - role: attached_btrfs
+      device: "{{ storage_device }}"
+      mnt_name: "{{ mnt_name }}"
 
     - role: plc-ref-mirror
       acme_primary: true
 
-    # - role: iptables_restrict
-    #   dports:
-    #     - 6780
-    #     - 9464  # metrics
+    - role: iptables_restrict
+      dports:
+        - 6780 # plc-replica (wrapped by allegedly)
+        - 9464 # metrics

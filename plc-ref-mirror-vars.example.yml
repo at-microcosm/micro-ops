@@ -1,5 +1,3 @@
 tls_name: us-west.plc.wtf
 storage_device: /dev/vdb
-mnt_name: pg
-pg_location: /mnt/pg/db
-mirror_db_password: fANcIUQnfCqHFecC
+mnt_name: db

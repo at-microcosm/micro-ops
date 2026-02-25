@@ -9,7 +9,7 @@ Group=mirror
 Type=simple
 WorkingDirectory=/home/mirror/
 ExecStart=/home/mirror/plc-replica
-Environment="DATABASE_URL=sqlite:///mnt/{{ mnt_name }}/data/db.sqlite"
+Environment="DATABASE_URL=sqlite:///mnt/{{ mnt_name }}/data/db.sqlite?_journal_mode=WAL"
 Restart=always
 RestartSec=2
 StartLimitIntervalSec=0

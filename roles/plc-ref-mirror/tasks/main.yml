@@ -54,24 +54,6 @@
     chdir: /home/mirror/go-didplc
   when: mirror_repo.changed or force_build is defined
 
-- name: copy plc-replica systemd service file
-  ansible.builtin.template:
-    src: templates/plc-replica.service.j2
-    dest: /etc/systemd/system/plc-replica.service
-  register: mirror_service
-
-- name: enable plc-replica
-  ansible.builtin.systemd_service:
-    name: plc-replica
-    daemon_reload: "{{ mirror_service.changed }}"
-    enabled: true
-
-- name: start plc-replica if requested
-  ansible.builtin.systemd_service:
-    name: plc-replica
-    state: "{% if mirror_repo.changed or mirror_service.changed %}re{% endif %}started"
-  when: start is defined
-
 #---- rust for allegedly ----#
 - name: get rustup
   become: true
@@ -97,6 +79,25 @@
     cmd: /home/allegedly/.cargo/bin/cargo build --release --bin allegedly
     chdir: /home/allegedly/allegedly/
   when: allegedly_repo.changed or force_build is defined
+
+#---- set up services for both ----#
+- name: copy plc-replica systemd service file
+  ansible.builtin.template:
+    src: templates/plc-replica.service.j2
+    dest: /etc/systemd/system/plc-replica.service
+  register: mirror_service
+
+- name: enable plc-replica
+  ansible.builtin.systemd_service:
+    name: plc-replica
+    daemon_reload: "{{ mirror_service.changed }}"
+    enabled: true
+
+- name: start plc-replica if requested
+  ansible.builtin.systemd_service:
+    name: plc-replica
+    state: "{% if mirror_repo.changed or mirror_service.changed %}re{% endif %}started"
+  when: start is defined
 
 - name: copy allegedly systemd service file
   ansible.builtin.template:

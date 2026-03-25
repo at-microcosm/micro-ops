@@ -1,3 +1,10 @@
-tls_name: us-west.plc.wtf
+tls_name: us-west.plc.wtf # can be comma-separated for multiple domains
+experimental_tls_name: experimental.us-west.plc.wtf # currently cannot specify multiple
 storage_device: /dev/vdb
 mnt_name: db
+
+# if you want to set up opentelemetry trace sending
+otel_mirror: true
+otel_mirror_endpoint: https://api.honeycomb.io
+otel_mirror_name: plc-mirror
+otel_mirror_headers: x-honeycomb-team=<YOUR_HONEYCOMB_INGEST_KEY_FOR_EXAMPLE>

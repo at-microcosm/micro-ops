@@ -15,7 +15,9 @@ Environment="ALLEGEDLY_WRAP=http://localhost:6780"
 Environment="ALLEGEDLY_ACME_DOMAIN={{ tls_name }}"
 Environment="ALLEGEDLY_ACME_CACHE_PATH=/home/allegedly/certs"
 Environment="ALLEGEDLY_ACME_IPV6=true"
-Environment="ALLEGEDLY_EXPERIMENTAL_ACME_DOMAIN=experimental.{{ tls_name }}"
+{% if experimental_tls_name is defined %}
+Environment="ALLEGEDLY_EXPERIMENTAL_ACME_DOMAIN={{ experimental_tls_name }}"
+{% endif %}
 Environment="ALLEGEDLY_EXPERIMENTAL_WRITE_UPSTREAM=true"
 Restart=always
 RestartSec=2

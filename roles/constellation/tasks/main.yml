@@ -9,7 +9,8 @@
       - libclang-dev
 
 - name: install rust by rustup
-  shell: curl https://sh.rustup.rs -sSf | sh -s -- -y
+  ansible.builtin.shell:
+    cmd: curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
 
 - name: get repo
   ansible.builtin.git:

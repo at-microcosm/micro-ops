@@ -1,0 +1,25 @@
+[Unit]
+Description=PLC read replica (reference implementation)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=mirror
+Group=mirror
+Type=simple
+WorkingDirectory=/home/mirror/
+ExecStart=/home/mirror/plc-replica
+Environment="DATABASE_URL=sqlite:///mnt/{{ mnt_name }}/data/db.sqlite?_journal_mode=WAL"
+
+{% if otel_mirror is defined %}
+Environment="OTEL_EXPORTER_OTLP_ENDPOINT={{ otel_mirror_endpoint }}"
+Environment="OTEL_EXPORTER_OTLP_HEADERS={{ otel_mirror_headers }}"
+Environment="OTEL_SERVICE_NAME={{ otel_mirror_name }}"
+{% endif %}
+
+Restart=always
+RestartSec=2
+StartLimitIntervalSec=0
+
+[Install]
+WantedBy=multi-user.target

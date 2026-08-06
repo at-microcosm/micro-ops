@@ -1,0 +1,11 @@
+---
+- name: Deploy hubble
+  hosts: hubble
+  become: true
+  roles:
+    - node_exporter
+    - hubble
+    - role: nginx_tls
+      nginx_tls_host: "{{ hubble_public_host }}"
+      nginx_tls_upstream: "{{ hubble_bind }}"
+      when: hubble_public_host is defined

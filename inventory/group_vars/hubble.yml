@@ -1,0 +1,20 @@
+---
+hubble_user: hubble
+hubble_home: /home/hubble
+
+hubble_repo: https://tangled.org/microcosm.blue/hubble
+hubble_version: main
+
+hubble_data_dir: "{{ hubble_home }}/data"
+
+hubble_contact: "{{ operator_contact }}"
+
+hubble_bind: "127.0.0.1:3000"
+hubble_metrics_bind: "127.0.0.1:9000"
+
+hubble_rust_log: "info,hubble=debug,hubble_sync=info"
+
+# jemalloc plz return pages to the os
+hubble_malloc_conf: "background_thread:true,dirty_decay_ms:10000"
+
+hubble_extra_env: {}

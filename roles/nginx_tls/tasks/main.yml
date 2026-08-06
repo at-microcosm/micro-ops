@@ -1,0 +1,61 @@
+---
+# nginx reverse proxy + certbot for acme tls
+#
+# certbot edits the nginx host file to add its tls config, so we template it on
+# first create (force: false) to avoid clobbering on re-runs. remove the nginx
+# host file and then run to make changes stick.
+
+- name: install deps
+  ansible.builtin.apt:
+    name:
+      - nginx
+      - certbot
+      - python3-certbot-nginx
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: server_tokens off
+  ansible.builtin.lineinfile:
+    path: /etc/nginx/nginx.conf
+    regexp: '^\s*#?\s*server_tokens\b'
+    line: "    server_tokens off;"
+    insertafter: '^http\s*{'
+  register: nginx_server_tokens
+
+- name: remove default nginx site
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
+- name: add nginx vhost for {{ nginx_tls_host }}
+  ansible.builtin.template:
+    src: host.j2
+    dest: /etc/nginx/sites-available/{{ nginx_tls_host }}
+    force: false # don't clobber certbot's in-place tls edits
+  register: nginx_vhost
+
+- name: enable vhost
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/{{ nginx_tls_host }}
+    dest: /etc/nginx/sites-enabled/{{ nginx_tls_host }}
+    state: link
+
+- name: check nginx config
+  ansible.builtin.command: nginx -t
+  changed_when: false
+
+- name: enable and (re)start nginx
+  ansible.builtin.systemd_service:
+    name: nginx
+    state: "{{ 'restarted' if (nginx_vhost.changed or nginx_server_tokens.changed) else 'started' }}"
+    enabled: true
+
+- name: check for existing cert
+  ansible.builtin.command: "certbot certificates -d {{ nginx_tls_host }}"
+  register: certbot_certs
+  changed_when: false
+  check_mode: false  # ansible doesn't run scripts in check-mode so skip
+
+- name: obtain cert and configure nginx tls
+  ansible.builtin.command: "certbot run -d {{ nginx_tls_host }} --nginx -n --agree-tos -m {{ operator_email }}"
+  when: nginx_tls_host not in certbot_certs.stdout

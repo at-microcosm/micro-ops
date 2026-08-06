@@ -1,0 +1,79 @@
+---
+- name: resolve per-host extra env # or fail fast
+  ansible.builtin.set_fact:
+    hubble_extra_env: "{{ hubble_extra_env }}"
+
+- name: install build deps
+  ansible.builtin.apt:
+    name:
+      - git
+      - build-essential
+      - pkg-config
+      - libssl-dev # for reqwest i think
+      - libclang-dev # for rocksdb
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: create hubble user
+  ansible.builtin.user:
+    name: "{{ hubble_user }}"
+    home: "{{ hubble_home }}"
+    shell: /bin/bash
+    create_home: true
+
+- name: install rustup
+  become: true
+  become_user: "{{ hubble_user }}"
+  ansible.builtin.shell:
+    chdir: "{{ hubble_home }}"
+    cmd: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
+    creates: "{{ hubble_home }}/.cargo/bin/rustup"
+
+- name: clone/update hubble
+  become: true
+  become_user: "{{ hubble_user }}"
+  ansible.builtin.git:
+    repo: "{{ hubble_repo }}"
+    dest: "{{ hubble_home }}/hubble"
+    version: "{{ hubble_version }}"
+  register: hubble_repo_co
+
+- name: build hubble (slow!)
+  become: true
+  become_user: "{{ hubble_user }}"
+  ansible.builtin.command:
+    cmd: "{{ hubble_home }}/.cargo/bin/cargo build --release -p hubble --features jemalloc"
+    chdir: "{{ hubble_home }}/hubble"
+  when: hubble_repo_co.changed or force_build is defined
+  notify: restart hubble
+
+- name: create hubble data dir
+  ansible.builtin.file:
+    path: "{{ hubble_data_dir }}"
+    state: directory
+    owner: "{{ hubble_user }}"
+    group: "{{ hubble_user }}"
+    mode: '0750'
+
+- name: install hubble environment file
+  ansible.builtin.template:
+    src: hubble.env.j2
+    dest: "{{ hubble_home }}/hubble.env"
+    owner: "{{ hubble_user }}"
+    group: "{{ hubble_user }}"
+    mode: '0640'
+  notify: restart hubble
+
+- name: install hubble systemd unit
+  ansible.builtin.template:
+    src: hubble.service.j2
+    dest: /etc/systemd/system/hubble.service
+  register: hubble_unit
+  notify: restart hubble
+
+- name: enable hubble
+  ansible.builtin.systemd_service:
+    name: hubble
+    enabled: true
+    state: started
+    daemon_reload: "{{ hubble_unit.changed }}"

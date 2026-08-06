@@ -1,0 +1,6 @@
+---
+- name: restart hubble
+  ansible.builtin.systemd_service:
+    name: hubble
+    state: restarted
+    daemon_reload: true

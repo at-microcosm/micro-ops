@@ -1,0 +1,24 @@
+---
+ansible_host: bridgy-hubble
+
+hubble_public_host: bridgy-hubble.microcosm.blue
+
+# route the bridgy auth token (secrets.yml) in
+hubble_extra_env:
+  HUBBLE_UPSTREAM_GETREPO_TOKEN: "{{ bridgy_upstream_getrepo_token }}"
+
+# pds-direct mode
+hubble_mode_args:
+  - --upstream atproto.brid.gy
+  - --upstream-getrepo-token-forward-to bsky.brid.gy
+
+hubble_tuning_args:
+  - --rocksdb-cache-mb 1024
+  - --records-write-buffer-mb 64
+  - --records-max-write-buffer-number 3
+  - --records-max-subcompactions 2
+  - --records-soft-pending-compaction-gb 16
+  - --records-hard-pending-compaction-gb 32
+  - --max-repo-actors 16384
+  - --max-resync-concurrency 4
+  - --max-big-repo-resync-concurrency 2

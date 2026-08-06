@@ -1,2 +1,3 @@
 local/
-*-vars.yml
+legacy/*-vars.yml
+secrets.yml

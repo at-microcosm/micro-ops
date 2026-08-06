@@ -1,0 +1,23 @@
+---
+ansible_host: hubble-hetz-01
+
+hubble_public_host: hetz-test-hubble.microcosm.blue
+
+hubble_mode_args:
+  - --upstream bsky.network
+  - --upstream-mode-relay
+  - --deep-crawl
+
+hubble_tuning_args:
+  - --repo-backpressure-retry-sleep 200
+  - --repo-backpressure-max-retries 2048
+  - --max-repo-actors 32768
+  - --max-resync-concurrency 4096
+  - --max-big-repo-resync-concurrency 256
+  - --rocksdb-background-jobs 16
+  - --rocksdb-cache-mb 24576
+  - --rocksdb-statistics
+  - --repo-sst-ingest-threshold-mb 8 # ingests always go to L0: we skip WAL and bypass memtable
+  - --max-plc-scheduled-requests 128
+  - --zstd-level 6
+  - --gzip-level 6

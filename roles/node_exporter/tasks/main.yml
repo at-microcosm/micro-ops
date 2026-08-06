@@ -1,0 +1,36 @@
+---
+# (ported from eurosky-ops; versions/listen come from group_vars/all.yml)
+
+- name: create node_exporter user
+  ansible.builtin.user:
+    name: node_exporter
+    shell: /usr/sbin/nologin
+    create_home: false
+    system: true
+
+- name: download node_exporter {{ node_exporter_version }}
+  ansible.builtin.unarchive:
+    src: "https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}/node_exporter-{{ node_exporter_version }}.{{ node_exporter_arch }}.tar.gz"
+    dest: /opt/
+    remote_src: true
+    creates: "/opt/node_exporter-{{ node_exporter_version }}.{{ node_exporter_arch }}"
+
+- name: install node_exporter binary
+  ansible.builtin.copy:
+    src: "/opt/node_exporter-{{ node_exporter_version }}.{{ node_exporter_arch }}/node_exporter"
+    dest: /usr/local/bin/node_exporter
+    mode: '0755'
+    remote_src: true
+
+- name: install node_exporter systemd unit
+  ansible.builtin.template:
+    src: node_exporter.service.j2
+    dest: /etc/systemd/system/node_exporter.service
+  register: node_exporter_unit
+
+- name: enable and start node_exporter
+  ansible.builtin.systemd_service:
+    name: node_exporter
+    state: "{{ 'restarted' if node_exporter_unit.changed else 'started' }}"
+    enabled: true
+    daemon_reload: "{{ node_exporter_unit.changed }}"

@@ -1,0 +1,26 @@
+[Unit]
+Description=hubble
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User={{ hubble_user }}
+Group={{ hubble_user }}
+EnvironmentFile={{ hubble_home }}/hubble.env
+ExecStart={{ hubble_home }}/hubble/target/release/hubble \
+    --data-dir {{ hubble_data_dir }} \
+    --contact {{ hubble_contact }} \
+    --bind {{ hubble_bind }} \
+    --metrics-bind {{ hubble_metrics_bind }} \
+    {{ (hubble_mode_args + hubble_tuning_args) | join(' \\\n    ') }}
+Restart=always
+RestartSec=2
+# hubble's graceful shutdown handler listens for SIGINT (ctrl-c), not SIGTERM
+KillSignal=SIGINT
+TimeoutStopSec=60
+LimitNOFILE=524288
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

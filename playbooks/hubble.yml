@@ -9,4 +9,5 @@
     - role: nginx_tls
       nginx_tls_host: "{{ hubble_public_host }}"
       nginx_tls_upstream: "{{ hubble_bind }}"
+      nginx_tls_root_redirect: "{{ hubble_root_redirect | default('') }}"
       when: hubble_public_host is defined

@@ -9,15 +9,6 @@ server {
 
     server_name {{ nginx_tls_host }};
 
-    location / {
-        proxy_pass http://{{ nginx_tls_upstream }};
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection $connection_upgrade;
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-For $remote_addr;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_read_timeout 300s;
-        proxy_send_timeout 300s;
-    }
+    # split into a second file so we can change without clobbering certbot
+    include /etc/nginx/snippets/{{ nginx_tls_host }}.conf;
 }

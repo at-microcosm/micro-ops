@@ -4,6 +4,10 @@
 # certbot edits the nginx host file to add its tls config, so we template it on
 # first create (force: false) to avoid clobbering on re-runs. remove the nginx
 # host file and then run to make changes stick.
+#
+# most of the time that shouldn't matter: location-level config is in a separate
+# nginx file that gets `include`d by the host config, which can be changed
+# without conflict with certbot.
 
 - name: install deps
   ansible.builtin.apt:
@@ -27,6 +31,13 @@
     path: /etc/nginx/sites-enabled/default
     state: absent
 
+- name: install locations config for {{ nginx_tls_host }}
+  ansible.builtin.template:
+    src: locations.j2
+    dest: /etc/nginx/snippets/{{ nginx_tls_host }}.conf
+    force: true # ansible-owned
+  register: nginx_snippet
+
 - name: add nginx vhost for {{ nginx_tls_host }}
   ansible.builtin.template:
     src: host.j2
@@ -44,10 +55,13 @@
   ansible.builtin.command: nginx -t
   changed_when: false
 
+# snippet-only changes just reload
 - name: enable and (re)start nginx
   ansible.builtin.systemd_service:
     name: nginx
-    state: "{{ 'restarted' if (nginx_vhost.changed or nginx_server_tokens.changed) else 'started' }}"
+    state: >-
+      {{ 'restarted' if (nginx_vhost.changed or nginx_server_tokens.changed)
+         else ('reloaded' if nginx_snippet.changed else 'started') }}
     enabled: true
 
 - name: check for existing cert
@@ -56,6 +70,8 @@
   changed_when: false
   check_mode: false  # ansible doesn't run scripts in check-mode so skip
 
+# also re-run when the host file was (re)created: after a host config reset we
+# have no tls config. certbot reuses an existing cert if one is present.
 - name: obtain cert and configure nginx tls
   ansible.builtin.command: "certbot run -d {{ nginx_tls_host }} --nginx -n --agree-tos -m {{ operator_email }}"
-  when: nginx_tls_host not in certbot_certs.stdout
+  when: nginx_tls_host not in certbot_certs.stdout or nginx_vhost.changed

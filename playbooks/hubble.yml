@@ -3,6 +3,7 @@
   hosts: hubble
   become: true
   roles:
+    - nonlocal_bind
     - node_exporter
     - hubble
     - role: nginx_tls

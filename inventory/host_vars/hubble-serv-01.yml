@@ -1,6 +1,6 @@
 ---
 ansible_host: hubble-serv-01
-
+# tailscale_ip: <TODO>
 # hubble_public_host: <TODO set up dns>
 
 hubble_mode_args:

@@ -10,7 +10,7 @@ hubble_data_dir: "{{ hubble_home }}/data"
 hubble_contact: "{{ operator_contact }}"
 
 hubble_bind: "127.0.0.1:3000"
-hubble_metrics_bind: "127.0.0.1:9000"
+hubble_metrics_bind: "{{ tailscale_ip }}:9000" # scraped over the tailnet
 
 hubble_rust_log: "info,hubble=debug,hubble_sync=info"
 

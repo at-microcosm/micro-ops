@@ -1,9 +1,9 @@
 ---
 ansible_host: bridgy-hubble
-
+tailscale_ip: 100.123.160.95
 hubble_public_host: bridgy-hubble.microcosm.blue
 
-# route the bridgy auth token (secrets.yml) in
+# route in the bridgy auth token (secrets.yml)
 hubble_extra_env:
   HUBBLE_UPSTREAM_GETREPO_TOKEN: "{{ bridgy_upstream_getrepo_token }}"
 

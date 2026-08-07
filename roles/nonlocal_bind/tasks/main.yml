@@ -1,0 +1,15 @@
+---
+# bind an IP which doesn't exist yet during early boot (like tailscale ips).
+# sockets bind immediately and start working the moment the IP appears
+
+- name: allow binding non-local addresses
+  ansible.builtin.copy:
+    dest: /etc/sysctl.d/30-nonlocal-bind.conf
+    content: "net.ipv4.ip_nonlocal_bind = 1\n"
+    mode: '0644'
+  register: nonlocal_bind
+
+- name: apply sysctl
+  ansible.builtin.command: sysctl --system
+  when: nonlocal_bind.changed
+  changed_when: nonlocal_bind.changed

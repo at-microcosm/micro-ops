@@ -27,6 +27,12 @@ ansible-playbook -e @secrets.yml -e force_build=1 playbooks/hubble.yml
 
 # limit to one host:
 ansible-playbook -e @secrets.yml -l bridgy-hubble playbooks/hubble.yml
+
+# deps + build only
+ansible-playbook -l hubble-pi-01 --tags build playbooks/hubble.yml
 ```
 
 setting `hubble_public_host` gets nginx + certbot TLS going in front.
+
+setting `hubble_storage_device` formats it as xfs (device msut be blank) and
+mounts it at `hubble_storage_mount`.

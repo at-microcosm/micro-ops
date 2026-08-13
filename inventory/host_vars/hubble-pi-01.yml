@@ -1,0 +1,30 @@
+---
+ansible_host: hubble-pi-1
+ansible_user: phil
+tailscale_ip: 100.85.184.41
+node_exporter_arch: linux-arm64
+
+hubble_bind: "{{ tailscale_ip }}:3000"
+
+hubble_storage_device: /dev/nvme0n1
+hubble_storage_mount: /mnt/hubble
+hubble_data_dir: "{{ hubble_storage_mount }}/data"
+
+hubble_mode_args:
+  - --upstream bsky.network
+  - --upstream-mode-relay
+  - --deep-crawl
+
+hubble_tuning_args:
+  - --repo-backpressure-retry-sleep 200
+  - --repo-backpressure-max-retries 2048
+  - --max-repo-actors 32768
+  - --max-resync-concurrency 64
+  - --max-big-repo-resync-concurrency 4
+  - --rocksdb-background-jobs 4
+  - --rocksdb-cache-mb 8192
+  - --rocksdb-statistics
+  - --repo-sst-ingest-threshold-mb 8 # ingests always go to L0: we skip WAL and bypass memtable
+  - --max-plc-scheduled-requests 32
+  - --zstd-level 3
+  - --gzip-level 1

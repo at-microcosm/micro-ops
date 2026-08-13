@@ -1,7 +1,12 @@
 ---
+# tags:
+#   - `build`: toolchain + compile
+#   - `service`: config + systemd
+
 - name: resolve per-host extra env # or fail fast
   ansible.builtin.set_fact:
     hubble_extra_env: "{{ hubble_extra_env }}"
+  tags: service
 
 - name: install build deps
   ansible.builtin.apt:
@@ -11,8 +16,10 @@
       - pkg-config
       - libssl-dev # for reqwest i think
       - libclang-dev # for rocksdb
+      - acl # ansible needs setfacl to become hubble from a non-root login
     update_cache: true
     cache_valid_time: 3600
+  tags: build
 
 - name: create hubble user
   ansible.builtin.user:
@@ -20,6 +27,7 @@
     home: "{{ hubble_home }}"
     shell: /bin/bash
     create_home: true
+  tags: [build, service]
 
 - name: install rustup
   become: true
@@ -28,6 +36,7 @@
     chdir: "{{ hubble_home }}"
     cmd: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
     creates: "{{ hubble_home }}/.cargo/bin/rustup"
+  tags: build
 
 - name: clone/update hubble
   become: true
@@ -37,6 +46,7 @@
     dest: "{{ hubble_home }}/hubble"
     version: "{{ hubble_version }}"
   register: hubble_repo_co
+  tags: build
 
 - name: build hubble (slow!)
   become: true
@@ -46,6 +56,7 @@
     chdir: "{{ hubble_home }}/hubble"
   when: hubble_repo_co.changed or force_build is defined
   notify: restart hubble
+  tags: build
 
 - name: create hubble data dir
   ansible.builtin.file:
@@ -54,6 +65,7 @@
     owner: "{{ hubble_user }}"
     group: "{{ hubble_user }}"
     mode: '0750'
+  tags: service
 
 - name: install hubble environment file
   ansible.builtin.template:
@@ -63,6 +75,7 @@
     group: "{{ hubble_user }}"
     mode: '0640'
   notify: restart hubble
+  tags: service
 
 - name: install hubble systemd unit
   ansible.builtin.template:
@@ -70,6 +83,7 @@
     dest: /etc/systemd/system/hubble.service
   register: hubble_unit
   notify: restart hubble
+  tags: service
 
 - name: enable hubble
   ansible.builtin.systemd_service:
@@ -77,3 +91,4 @@
     enabled: true
     state: started
     daemon_reload: "{{ hubble_unit.changed }}"
+  tags: service

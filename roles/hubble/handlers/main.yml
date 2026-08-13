@@ -4,3 +4,4 @@
     name: hubble
     state: restarted
     daemon_reload: true
+  tags: service

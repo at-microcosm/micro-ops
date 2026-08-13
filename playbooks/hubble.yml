@@ -4,6 +4,10 @@
   become: true
   roles:
     - nonlocal_bind
+    - role: xfs_volume
+      xfs_volume_device: "{{ hubble_storage_device }}"
+      xfs_volume_mount: "{{ hubble_storage_mount }}"
+      when: hubble_storage_device is defined
     - node_exporter
     - hubble
     - role: nginx_tls

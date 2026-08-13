@@ -1,0 +1,29 @@
+---
+# format and mount a whole block device as xfs
+#
+# note: `filesystem` formatter won't wipe an existing fs unless forced
+
+- name: install xfsprogs
+  ansible.builtin.apt:
+    name: xfsprogs
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: format {{ xfs_volume_device }} as xfs
+  community.general.filesystem:
+    fstype: xfs
+    dev: "{{ xfs_volume_device }}"
+
+- name: get filesystem uuid
+  ansible.builtin.command: "blkid -s UUID -o value {{ xfs_volume_device }}"
+  register: xfs_volume_uuid
+  changed_when: false
+  check_mode: false # ansible doesn't run scripts in check-mode so skip
+
+- name: mount {{ xfs_volume_device }} at {{ xfs_volume_mount }}
+  ansible.posix.mount:
+    path: "{{ xfs_volume_mount }}"
+    src: "UUID={{ xfs_volume_uuid.stdout | trim }}"
+    fstype: xfs
+    opts: noatime # don't rewrite metadata on every read
+    state: mounted

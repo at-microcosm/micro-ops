@@ -64,14 +64,21 @@
          else ('reloaded' if nginx_snippet.changed else 'started') }}
     enabled: true
 
-- name: check for existing cert
-  ansible.builtin.command: "certbot certificates -d {{ nginx_tls_host }}"
+- name: check for existing certs
+  ansible.builtin.command: certbot certificates
   register: certbot_certs
   changed_when: false
   check_mode: false  # ansible doesn't run scripts in check-mode so skip
 
-# also re-run when the host file was (re)created: after a host config reset we
-# have no tls config. certbot reuses an existing cert if one is present.
+# --cert-name is like the main tls name? --expand adds more tls names
+#
+# runs when any name is missing a cert, + when host file is (re)created
 - name: obtain cert and configure nginx tls
-  ansible.builtin.command: "certbot run -d {{ nginx_tls_host }} --nginx -n --agree-tos -m {{ operator_email }}"
-  when: nginx_tls_host not in certbot_certs.stdout or nginx_vhost.changed
+  ansible.builtin.command: >-
+    certbot run --nginx -n --agree-tos --expand
+    --cert-name {{ nginx_tls_host }}
+    -m {{ operator_email }}
+    -d {{ nginx_tls_all_hosts | join(' -d ') }}
+  when: >-
+    nginx_vhost.changed
+    or nginx_tls_all_hosts | reject('in', certbot_certs.stdout) | list | length > 0

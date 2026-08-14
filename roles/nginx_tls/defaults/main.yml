@@ -1,0 +1,3 @@
+---
+# extra names to get on the cert
+nginx_tls_extra_hosts: []

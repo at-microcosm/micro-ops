@@ -7,7 +7,7 @@ server {
     listen 80;
     listen [::]:80; # nginx ipv6, which certbot will mirror
 
-    server_name {{ nginx_tls_host }};
+    server_name {{ nginx_tls_all_hosts | join(' ') }};
 
     # split into a second file so we can change without clobbering certbot
     include /etc/nginx/snippets/{{ nginx_tls_host }}.conf;

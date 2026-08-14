@@ -33,6 +33,7 @@ ansible-playbook -l hubble-pi-01 --tags build playbooks/hubble.yml
 ```
 
 setting `hubble_public_host` gets nginx + certbot TLS going in front.
+`hubble_extra_public_hosts` (a list) adds more names for the same service on the same cert.
 
 setting `hubble_storage_device` formats it as xfs (device msut be blank) and
 mounts it at `hubble_storage_mount`.

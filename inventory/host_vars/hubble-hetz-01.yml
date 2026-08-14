@@ -2,6 +2,8 @@
 ansible_host: hubble-hetz-01
 tailscale_ip: 100.68.37.126
 hubble_public_host: hetz-test-hubble.microcosm.blue
+hubble_extra_public_hosts:
+  - hubble.microcosm.blue
 hubble_root_redirect: https://web.hubble.microcosm.blue
 
 hubble_mode_args:

@@ -18,3 +18,17 @@ hubble_rust_log: "info,hubble=debug,hubble_sync=info"
 hubble_malloc_conf: "background_thread:true,dirty_decay_ms:10000"
 
 hubble_extra_env: {}
+
+hubble_big_tigris_endpoint: https://t3.storage.dev
+hubble_big_tigris_bucket: hubble
+
+# periodic rocksdb checkpoint pushes to object storage (eat-rocks), as
+# backupengine-compatible backups. hosts opt in with an endpoint + credentials
+# for whichever bucket is theirs -- see host_vars.
+hubble_backup_enabled: false
+hubble_backup_bucket: ~ # path-style endpoints (minio etc) only
+hubble_backup_prefix: "{{ inventory_hostname }}" # one backup set per host
+hubble_backup_interval: 24h
+hubble_backup_initial_delay: ~ # null: first backup after one full interval
+hubble_backup_retain: 6 # null keeps every backup forever
+hubble_backup_checkpoint_dir: ~ # null: <data-dir>/backup-checkpoint, same fs as the db

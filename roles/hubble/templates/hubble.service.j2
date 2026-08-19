@@ -1,3 +1,21 @@
+{% set backup_args = [] %}
+{% if hubble_backup_enabled %}
+{% set _ = backup_args.append('--backup-endpoint ' ~ hubble_backup_endpoint) %}
+{% if hubble_backup_bucket %}
+{% set _ = backup_args.append('--backup-bucket ' ~ hubble_backup_bucket) %}
+{% endif %}
+{% set _ = backup_args.append('--backup-prefix ' ~ hubble_backup_prefix) %}
+{% set _ = backup_args.append('--backup-interval ' ~ hubble_backup_interval) %}
+{% if hubble_backup_initial_delay %}
+{% set _ = backup_args.append('--backup-initial-delay ' ~ hubble_backup_initial_delay) %}
+{% endif %}
+{% if hubble_backup_retain %}
+{% set _ = backup_args.append('--backup-retain ' ~ hubble_backup_retain) %}
+{% endif %}
+{% if hubble_backup_checkpoint_dir %}
+{% set _ = backup_args.append('--backup-checkpoint-dir ' ~ hubble_backup_checkpoint_dir) %}
+{% endif %}
+{% endif %}
 [Unit]
 Description=hubble
 Wants=network-online.target
@@ -12,7 +30,7 @@ ExecStart={{ hubble_home }}/hubble/target/release/hubble \
     --contact {{ hubble_contact }} \
     --bind {{ hubble_bind }} \
     --metrics-bind {{ hubble_metrics_bind }} \
-    {{ (hubble_mode_args + hubble_tuning_args) | join(' \\\n    ') }}
+    {{ (hubble_mode_args + hubble_tuning_args + backup_args) | join(' \\\n    ') }}
 Restart=always
 RestartSec=2
 # hubble's graceful shutdown handler listens for SIGINT (ctrl-c), not SIGTERM

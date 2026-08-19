@@ -37,3 +37,8 @@ setting `hubble_public_host` gets nginx + certbot TLS going in front.
 
 setting `hubble_storage_device` formats it as xfs (device msut be blank) and
 mounts it at `hubble_storage_mount`.
+
+setting `hubble_backup_enabled` turns on periodic rocksdb backups pushed to
+object storage. the endpoint and credentials are per-host (host_vars), since
+each host has its own bucket; everything else has a group default. each host
+gets its own prefix within its bucket, named after its inventory name.

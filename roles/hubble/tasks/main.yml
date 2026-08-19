@@ -8,6 +8,14 @@
     hubble_extra_env: "{{ hubble_extra_env }}"
   tags: service
 
+- name: resolve backup credentials # or fail fast, before the slow build
+  ansible.builtin.set_fact:
+    hubble_backup_access_key_id: "{{ hubble_backup_access_key_id }}"
+    hubble_backup_secret_access_key: "{{ hubble_backup_secret_access_key }}"
+  when: hubble_backup_enabled
+  no_log: true # they're secrets
+  tags: service
+
 - name: install build deps
   ansible.builtin.apt:
     name:

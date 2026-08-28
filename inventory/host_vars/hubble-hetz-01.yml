@@ -15,7 +15,7 @@ hubble_backup_endpoint: "https://{{ hubble_big_tigris_bucket }}.{{ hubble_big_ti
 hubble_backup_access_key_id: "{{ hubble_big_tigris_access_key_id }}" # secrets.yml
 hubble_backup_secret_access_key: "{{ hubble_big_tigris_secret_access_key }}"
 hubble_backup_interval: 12h # x6 retained = 3 days of restore points
-hubble_backup_initial_delay: 3m # just to check the setup works; drop once it has
+hubble_backup_initial_delay: 6h
 
 hubble_mode_args:
   - --upstream bsky.network

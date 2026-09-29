@@ -1,0 +1,39 @@
+---
+# public sites. upstream blocks, certs, log files, log-exporter namespaces.
+# per-site nginx tuning at roles/gateway/templates/sites/<name>.conf.j2
+gateway_sites:
+  - name: constellation.microcosm.blue
+    log: constellation # <log>-access.log, exporter namespace, `cozy_<log>` upstream
+    upstream_port: 6789
+    upstreams:
+      - host: mikrokosmos
+      - host: orion
+        backup: true
+
+  - name: ufos-api.microcosm.blue
+    log: ufos
+    upstream_port: 9999
+    upstreams:
+      - host: mikrokosmos
+      - host: cooper
+        backup: true
+
+  - name: spacedust.microcosm.blue
+    log: spacedust
+    upstream_port: 9998
+    upstreams:
+      - host: arietids
+
+# access log format is coupled to metrics (log exporter reads it)
+gateway_log_format: '$remote_addr - $remote_user [$time_local] "$request" $status $upstream_cache_status $body_bytes_sent "$http_referer" "$http_user_agent" "$http_x_forwarded_for"'
+
+# debian default 768 is low enough to hit in prod
+gateway_worker_connections: 2048
+
+gateway_acme_webroot: /var/lib/acme-webroot
+gateway_acme_peer_port: 8402 # tailnet-only challenge forwards between gateways
+
+nginxlog_exporter_version: "1.11.0"
+nginxlog_exporter_arch: linux_amd64
+nginxlog_exporter_address: "{{ tailscale_ip }}" # scraped over the tailnet
+nginxlog_exporter_port: 4044

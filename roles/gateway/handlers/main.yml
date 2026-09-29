@@ -1,0 +1,11 @@
+---
+# handlers run in file order (bad config stops play before nginx gets reloaded)
+- name: check nginx config
+  ansible.builtin.command: nginx -t
+  changed_when: false
+  listen: reload nginx
+
+- name: reload nginx
+  ansible.builtin.systemd_service:
+    name: nginx
+    state: reloaded

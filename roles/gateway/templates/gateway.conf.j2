@@ -1,0 +1,64 @@
+# Managed by Ansible (roles/gateway): acme http-01 + default servers
+
+# port 80 for our names: acme challenges, everything else goes to https
+server {
+    listen 80;
+    server_name {{ gateway_sites | map(attribute='name') | join(' ') }};
+
+    location /.well-known/acme-challenge/ {
+        limit_req zone=cozy_ip_limit nodelay burst=150;
+        root {{ gateway_acme_webroot }};
+{% if gateway_acme_peers %}
+        try_files $uri @acme_peers;
+{% else %}
+        try_files $uri =404;
+{% endif %}
+    }
+{% if gateway_acme_peers %}
+
+    # not here: another gateway probably requested this token
+    location @acme_peers {
+        proxy_pass http://acme_peers;
+        proxy_next_upstream error timeout http_404; # ask the next peer on a miss
+        proxy_connect_timeout 2s;
+        proxy_read_timeout 2s;
+    }
+{% endif %}
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+{% if gateway_acme_peers %}
+
+upstream acme_peers {
+{% for peer in gateway_acme_peers %}
+    server {{ hostvars[peer].tailscale_ip }}:{{ gateway_acme_peer_port }}; # {{ peer }}
+{% endfor %}
+}
+{% endif %}
+
+# where the other gateways look for tokens. tailnet only, never forwards.
+server {
+    listen {{ tailscale_ip }}:{{ gateway_acme_peer_port }};
+
+    location /.well-known/acme-challenge/ {
+        root {{ gateway_acme_webroot }};
+        try_files $uri =404;
+    }
+
+    location / {
+        return 404;
+    }
+}
+
+# names we don't serve
+server {
+    listen 80 default_server;
+    return 444;
+}
+
+server {
+    listen 443 ssl default_server;
+    ssl_reject_handshake on;
+}

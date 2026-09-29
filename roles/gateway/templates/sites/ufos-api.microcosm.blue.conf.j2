@@ -1,0 +1,49 @@
+# Managed by Ansible (roles/gateway)
+{% include 'sites/_upstream.j2' %}
+
+server {
+    server_name {{ site.name }};
+{% include 'sites/_tls.j2' %}
+
+    proxy_cache cozy_zone;
+    proxy_cache_background_update on;
+    proxy_cache_key "$scheme$proxy_host$uri$is_args$args$http_accept";
+    proxy_cache_lock on; # simultaneous requests for the same uri wait for the cache instead of hitting origin
+    proxy_cache_lock_age 3s;
+    proxy_cache_lock_timeout 8s;
+    proxy_cache_valid any 2s; # non-200s default
+    proxy_cache_valid 10s; # default -- should be explicitly set in the response headers
+    add_header 'Cache-Control' 'public, max-age=10';
+    add_header 'Vary' 'Accept, Accept-Encoding';
+    proxy_read_timeout 10s;
+    proxy_send_timeout 15s;
+    proxy_socket_keepalive on;
+
+    include snippets/gateway-cors.conf;
+
+    access_log /var/log/nginx/{{ site.log }}-access.log exporter;
+    error_log /var/log/nginx/{{ site.log }}-error.log;
+
+    limit_req zone=cozy_ip_limit nodelay burst=150;
+    limit_req zone=cozy_global_limit burst=1800;
+    limit_req_status 429;
+
+    location / {
+        proxy_pass http://cozy_{{ site.log }};
+        include snippets/gateway-proxy.conf;
+        proxy_set_header Connection ""; # upstream keepalive
+    }
+{# per-path cache ttls in seconds: the gateway cache and the client max-age #}
+{% for path, ttl in {'/meta': 1, '/collections': 30, '/prefix': 60, '/search': 45, '/timeseries': 120}.items() %}
+
+    location {{ path }} {
+        proxy_pass http://cozy_{{ site.log }};
+        include snippets/gateway-proxy.conf;
+        proxy_set_header Connection ""; # upstream keepalive
+
+        proxy_cache_valid {{ ttl }}s;
+        add_header 'Cache-Control' 'public, max-age={{ ttl }}';
+        include snippets/gateway-cors.conf; # the add_header above drops the server block's
+    }
+{% endfor %}
+}

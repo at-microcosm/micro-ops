@@ -1,0 +1,28 @@
+# Managed by Ansible (roles/nginxlog_exporter)
+listen {
+  address = "{{ nginxlog_exporter_address }}"
+  port = {{ nginxlog_exporter_port }}
+}
+{% for name in nginxlog_exporter_logs %}
+
+namespace "{{ name }}" {
+  source = {
+    files = [
+      "/var/log/nginx/{{ name }}-access.log"
+    ]
+  }
+
+  format = {{ nginxlog_exporter_format | to_json }}
+
+  labels {
+    app = "{{ name }}"
+  }
+
+  relabel "cache_status" {
+    from = "upstream_cache_status"
+  }
+
+  namespace_label = "vhost"
+  metrics_override = { prefix = "nginx" }
+}
+{% endfor %}

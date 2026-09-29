@@ -1,0 +1,59 @@
+---
+# prometheus-nginxlog-exporter: per-site request metrics parsed from nginx
+# access logs. installed from upstream's .deb, which ships the
+# `prometheus-nginxlog-exporter` systemd unit reading
+# /etc/prometheus-nginxlog-exporter.hcl
+#
+# params:
+#   - nginxlog_exporter_logs: names; each reads /var/log/nginx/<name>-access.log
+#     into a metrics namespace of the same name
+#   - nginxlog_exporter_format: the nginx log_format those logs are written in
+
+- name: install prometheus-nginxlog-exporter {{ nginxlog_exporter_version }}
+  ansible.builtin.apt:
+    deb: "https://github.com/martin-helmich/prometheus-nginxlog-exporter/releases/download/v{{ nginxlog_exporter_version }}/prometheus-nginxlog-exporter_{{ nginxlog_exporter_version }}_{{ nginxlog_exporter_arch }}.deb"
+  notify: restart nginxlog exporter
+
+# upstream's unit runs as root with every capability dropped, so it can't get
+# into /var/log/nginx (www-data:adm 0750). read the logs as a member of adm
+# instead, which also keeps the exporter from writing to them.
+- name: create exporter unit drop-in dir
+  ansible.builtin.file:
+    path: /etc/systemd/system/prometheus-nginxlog-exporter.service.d
+    state: directory
+    mode: '0755'
+
+- name: run exporter as a log reader
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/prometheus-nginxlog-exporter.service.d/log-reader.conf
+    content: |
+      # Managed by Ansible (roles/nginxlog_exporter)
+      [Service]
+      DynamicUser=yes
+      SupplementaryGroups=adm
+    mode: '0644'
+  notify: restart nginxlog exporter
+
+# so the exporter has something to follow before a site first serves traffic
+- name: make sure access logs exist
+  ansible.builtin.file:
+    path: "/var/log/nginx/{{ item }}-access.log"
+    state: touch
+    owner: www-data
+    group: adm
+    mode: '0640'
+    modification_time: preserve
+    access_time: preserve
+  loop: "{{ nginxlog_exporter_logs }}"
+
+- name: install exporter config
+  ansible.builtin.template:
+    src: prometheus-nginxlog-exporter.hcl.j2
+    dest: /etc/prometheus-nginxlog-exporter.hcl
+  notify: restart nginxlog exporter
+
+- name: enable exporter
+  ansible.builtin.systemd_service:
+    name: prometheus-nginxlog-exporter
+    enabled: true
+    state: started

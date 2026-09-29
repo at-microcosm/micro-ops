@@ -1,0 +1,11 @@
+---
+- name: Deploy gateway
+  hosts: gateway
+  become: true
+  roles:
+    - nonlocal_bind # make stuff available on tailnet (which exists post-boot)
+    - node_exporter
+    - gateway
+    - role: nginxlog_exporter
+      nginxlog_exporter_logs: "{{ gateway_sites | map(attribute='log') | list }}"
+      nginxlog_exporter_format: "{{ gateway_log_format }}"

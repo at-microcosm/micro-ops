@@ -42,3 +42,25 @@ setting `hubble_backup_enabled` turns on periodic rocksdb backups pushed to
 object storage. the endpoint and credentials are per-host (host_vars), since
 each host has its own bucket; everything else has a group default. each host
 gets its own prefix within its bucket, named after its inventory name.
+
+
+## gateway
+
+public reverse proxy to home hosts over tailnet. tls, rate limiting, smol cache.
+gateways run on different providers for whole-provider-outage redundancy, dns
+load-balanced.
+
+- sites/upstreams: [`inventory/group_vars/gateway.yml`](./inventory/group_vars/gateway.yml)
+- per-site nginx: [`roles/gateway/templates/sites/`](./roles/gateway/templates/sites/)
+- playbook: [`playbooks/gateway.yml`](./playbooks/gateway.yml)
+
+```bash
+ansible-playbook playbooks/gateway.yml
+
+# on a new host before committing to a letsencrypt rate-limited request
+ansible-playbook --skip-tags certs playbooks/gateway.yml
+```
+
+currently gateways each get their own certs with certbot, but we manage nginx
+tls config manually. unexpected validation requests are forwarded to the other
+gateway hosts.

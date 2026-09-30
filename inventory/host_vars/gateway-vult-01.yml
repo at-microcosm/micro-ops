@@ -1,0 +1,3 @@
+---
+ansible_host: gateway-vult-01
+tailscale_ip: 100.74.132.28

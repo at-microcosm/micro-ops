@@ -4,6 +4,7 @@
 server {
     server_name {{ site.name }};
 {% include 'sites/_tls.j2' %}
+    include snippets/gateway-acme.conf;
 
     proxy_cache cozy_zone;
     proxy_cache_background_update on;

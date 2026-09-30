@@ -2,11 +2,10 @@
 # public reverse proxy: nginx in front of services at the house, over the
 # tailnet.
 #
-# ansible owns every nginx file. certbot just issues certs (webroot).
-# a site's config is only installed once its cert exists, (TODO: clearer about `--skip-tags certs`)
+# ansible owns nginx entirely now, certbot just issues webroot certs.
 #
 # tags:
-#   - `certs`: cert issuance
+#   - `certs`: cert issuance. run playbook with `--skip-tags certs` on new hosts first
 
 - name: make sure we have tailnet addresses
   ansible.builtin.assert:
@@ -15,13 +14,24 @@
     quiet: true
   loop: "{{ [inventory_hostname] + gateway_acme_peers + gateway_upstream_hosts }}"
 
-- name: "deps: install nginx and certbot"
+- name: "deps"
   ansible.builtin.apt:
     name:
       - nginx
       - certbot
+      - ufw # only so allowing web ports works
     update_cache: true
     cache_valid_time: 3600
+
+# these do nothing where ufw is inactive
+- name: allow http + https through ufw
+  community.general.ufw:
+    rule: allow
+    port: "{{ item }}"
+    proto: tcp
+  loop:
+    - "80"
+    - "443"
 
 - name: create acme webroot
   ansible.builtin.file:
@@ -40,6 +50,7 @@
     src: "snippets/{{ item }}.j2"
     dest: "/etc/nginx/snippets/{{ item }}"
   loop:
+    - gateway-acme.conf
     - gateway-cors.conf
     - gateway-proxy.conf
   notify: reload nginx

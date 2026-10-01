@@ -1,0 +1,44 @@
+# Managed by Ansible (roles/gateway)
+#
+# before constellation was called constellation and before microcosm existed
+#
+# 301s to actual constellation (since forever), one day we'll retire it for real
+
+# hacky manual json logs for future jq digging (hopefully fine)
+log_format links_debug escape=json '{'
+    '"time":"$time_iso8601",'
+    '"remote_addr":"$remote_addr",'
+    '"request":"$request",'
+    '"status":$status,'
+    '"bytes_sent":$body_bytes_sent,'
+    '"request_length":$request_length,'
+    '"request_time":$request_time,'
+    '"referer":"$http_referer",'
+    '"origin":"$http_origin",'
+    '"ua":"$http_user_agent",'
+    '"xff":"$http_x_forwarded_for",'
+    '"host":"$host",'
+    '"sni":"$ssl_server_name",'
+    '"tls":"$ssl_protocol",'
+    '"connection":$connection,'
+    '"connection_requests":$connection_requests'
+    '}';
+
+server {
+    server_name {{ site.name }};
+{% include 'sites/_tls.j2' %}
+    include snippets/gateway-acme.conf;
+
+    access_log /var/log/nginx/links-access.log links_debug;
+    error_log /var/log/nginx/links-error.log;
+
+    keepalive_timeout 5s; # we just redirect them away
+    client_max_body_size 1k; # no body-accepting action at all here
+
+    # cors can follow redirects
+    add_header Access-Control-Allow-Origin * always;
+
+    location / {
+        return 301 https://constellation.microcosm.blue$request_uri;
+    }
+}

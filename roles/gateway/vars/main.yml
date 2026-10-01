@@ -3,4 +3,4 @@
 gateway_acme_peers: "{{ groups['gateway'] | difference([inventory_hostname]) }}"
 
 # inventory hosts that some site proxies to
-gateway_upstream_hosts: "{{ gateway_sites | map(attribute='upstreams') | flatten | map(attribute='host') | unique }}"
+gateway_upstream_hosts: "{{ gateway_sites | map(attribute='upstreams', default=[]) | flatten | map(attribute='host') | unique }}"

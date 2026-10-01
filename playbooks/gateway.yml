@@ -7,5 +7,5 @@
     - node_exporter
     - gateway
     - role: nginxlog_exporter
-      nginxlog_exporter_logs: "{{ gateway_sites | map(attribute='log') | list }}"
+      nginxlog_exporter_logs: "{{ gateway_sites | selectattr('log', 'defined') | map(attribute='log') | list }}"
       nginxlog_exporter_format: "{{ gateway_log_format }}"

@@ -1,0 +1,12 @@
+# Managed by Ansible (roles/cert_check)
+[Unit]
+Description=daily tls cert check
+
+[Timer]
+OnCalendar=daily
+RandomizedDelaySec=30m
+# catch up after downtime
+Persistent=true
+
+[Install]
+WantedBy=timers.target

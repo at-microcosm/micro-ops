@@ -55,10 +55,10 @@ load-balanced.
 - playbook: [`playbooks/gateway.yml`](./playbooks/gateway.yml)
 
 ```bash
-ansible-playbook playbooks/gateway.yml
+ansible-playbook -e @secrets.yml playbooks/gateway.yml
 
 # on a new host before committing to a letsencrypt rate-limited request
-ansible-playbook --skip-tags certs playbooks/gateway.yml
+ansible-playbook -e @secrets.yml --skip-tags certs playbooks/gateway.yml
 ```
 
 currently gateways each get their own certs with certbot, but we manage nginx

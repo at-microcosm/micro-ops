@@ -1,0 +1,11 @@
+# Managed by Ansible (roles/cert_check)
+[Unit]
+Description=check served tls certs, report to healthchecks.io
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/cert-check.env
+ExecStart=/usr/local/bin/cert-check
+DynamicUser=yes

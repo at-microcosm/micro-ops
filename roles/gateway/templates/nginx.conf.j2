@@ -33,6 +33,9 @@ http {
     ssl_session_timeout 1d;
     ssl_session_tickets off;
 
+    # websockets (spacedust) still gets http/1.1
+    http2 on;
+
     ##
     # logs
     ##

@@ -1,0 +1,43 @@
+---
+# daily tls certs self-check
+#
+# reports to healthchecks.io
+#
+# params:
+#   - cert_check_names: tls names to check
+
+- name: make sure we have a healthchecks ping key
+  ansible.builtin.assert:
+    that: cert_check_ping_key | length > 0
+    fail_msg: "cert_check needs healthchecks_ping_key (and `-e @secrets.yml`)"
+    quiet: true
+
+- name: install check script
+  ansible.builtin.copy:
+    src: cert-check.sh
+    dest: /usr/local/bin/cert-check
+    mode: '0755'
+
+- name: install check config
+  ansible.builtin.template:
+    src: cert-check.env.j2
+    dest: /etc/cert-check.env
+    mode: '0600'
+  diff: false # contains ping key
+
+- name: install systemd units
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/etc/systemd/system/{{ item }}"
+    mode: '0644'
+  loop:
+    - cert-check.service
+    - cert-check.timer
+  register: cert_check_units
+
+- name: enable daily check
+  ansible.builtin.systemd_service:
+    name: cert-check.timer
+    enabled: true
+    state: started
+    daemon_reload: "{{ cert_check_units.changed }}"

@@ -1,0 +1,10 @@
+---
+# fail if fewer-than days left to expiry (certbot renews at 30d)
+cert_check_min_days: 21
+
+# connect here when checking
+cert_check_connect: 127.0.0.1:443
+
+# per-host checks (created on first ping)
+cert_check_ping_key: "{{ healthchecks_ping_key | default('') }}" # secrets.yml
+cert_check_slug: "cert-check-{{ inventory_hostname }}"

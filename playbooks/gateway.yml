@@ -9,3 +9,5 @@
     - role: nginxlog_exporter
       nginxlog_exporter_logs: "{{ gateway_sites | selectattr('log', 'defined') | map(attribute='log') | list }}"
       nginxlog_exporter_format: "{{ gateway_log_format }}"
+    - role: cert_check
+      cert_check_names: "{{ gateway_sites | map(attribute='name') | list }}"

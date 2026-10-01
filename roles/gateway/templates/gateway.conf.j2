@@ -3,6 +3,7 @@
 # port 80 for our names: acme challenges, everything else goes to https
 server {
     listen 80;
+    listen [::]:80;
     server_name {{ gateway_sites | map(attribute='name') | join(' ') }};
 
     include snippets/gateway-acme.conf;
@@ -37,10 +38,12 @@ server {
 # names we don't serve
 server {
     listen 80 default_server;
+    listen [::]:80 default_server;
     return 444;
 }
 
 server {
     listen 443 ssl default_server;
+    listen [::]:443 ssl default_server;
     ssl_reject_handshake on;
 }

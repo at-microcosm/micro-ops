@@ -56,7 +56,17 @@ http {
     ##
     # cozy limit
     ##
-    limit_req_zone $binary_remote_addr zone=cozy_ip_limit:10m rate=50r/s;
+
+    # v4 ip or v6 /64
+    map $remote_addr $cozy_client_ip {
+        # first four ipv6 groups (the /64)
+        "~^(?<p>[0-9a-f]{1,4}:[0-9a-f]{1,4}:[0-9a-f]{1,4}:[0-9a-f]{1,4}):" $p;
+        # if `::` shows within the first four groups, take the higher prefix
+        "~^(?<p>[0-9a-f:]*?::)" $p;
+        # should only be ipv4 beyond here
+        default $binary_remote_addr;
+    }
+    limit_req_zone $cozy_client_ip zone=cozy_ip_limit:10m rate=50r/s;
     limit_req_zone $server_name zone=cozy_global_limit:1m rate=1000r/s;
 
     # websocket upgrades pass through; plain requests keep upstream keepalive

@@ -7,6 +7,9 @@ server {
     include snippets/gateway-acme.conf;
 
     proxy_cache cozy_zone;
+    # stale when upstream is failing
+    proxy_cache_use_stale error timeout http_502 http_503 http_504;
+    # for upstream `Cache-Control: stale-while-revalidate=<n>` responses
     proxy_cache_background_update on;
     proxy_cache_key "$scheme$proxy_host$uri$is_args$args$http_accept";
     proxy_cache_lock on; # simultaneous requests for the same uri wait for the cache instead of hitting origin

@@ -1,0 +1,13 @@
+# Managed by Ansible (roles/scrape_targets): file_sd targets for job `{{ job }}`
+{% for host in scrape_targets_hosts %}
+{% for target in hostvars[host].scrape_targets | selectattr('job', 'equalto', job) %}
+- targets:
+    - "{{ hostvars[host].tailscale_ip }}:{{ target.port }}"
+  labels:
+    job: "{{ job }}"
+    instance: "{{ host }}"
+{% for name, value in (target.labels | default({})).items() | sort %}
+    {{ name }}: {{ value | to_json }}
+{% endfor %}
+{% endfor %}
+{% endfor %}

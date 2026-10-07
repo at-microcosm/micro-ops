@@ -37,6 +37,11 @@ gateway_worker_connections: 2048
 # fails everything over to the backup.
 gateway_upstream_connect_timeout: 2s
 
+# failover to `backup` upstreams. currently nginx defaults here (see lino host)
+gateway_proxy_next_upstream: error timeout
+gateway_upstream_max_fails: 1
+gateway_upstream_fail_timeout: 10s
+
 gateway_acme_webroot: /var/lib/acme-webroot
 gateway_acme_peer_port: 8402 # tailnet-only challenge forwards between gateways
 
@@ -50,3 +55,13 @@ nginxlog_exporter_port: 4044
 # read timeouts (5s, 10s), spacedust's 60s.
 # websockets time the whole session, mostly in +Inf (filter out by status=101)
 nginxlog_exporter_histogram_buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 3, 5, 8, 10, 30, 60]
+
+scrape_targets:
+  - job: host
+    port: "{{ node_exporter_port }}"
+    labels:
+      role: gateway
+  - job: nginx
+    port: "{{ nginxlog_exporter_port }}"
+    labels:
+      role: gateway

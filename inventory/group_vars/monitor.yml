@@ -1,0 +1,7 @@
+---
+# (victoriametrics also scrapes itself at -selfScrapeInterval)
+scrape_targets:
+  - job: host
+    port: "{{ node_exporter_port }}"
+    labels:
+      role: monitor

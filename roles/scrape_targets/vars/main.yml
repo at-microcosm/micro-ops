@@ -1,0 +1,14 @@
+---
+# every inventory host that declares `scrape_targets`
+scrape_targets_hosts: >-
+  {{ groups['all'] | map('extract', hostvars) | selectattr('scrape_targets', 'defined')
+     | map(attribute='inventory_hostname') | list }}
+
+# one target file per job
+scrape_targets_jobs: >-
+  {{ scrape_targets_hosts | map('extract', hostvars) | map(attribute='scrape_targets')
+     | flatten | map(attribute='job') | unique | sort }}
+
+# anything else in the dir is stale and gets removed
+scrape_targets_files: >-
+  {{ scrape_targets_jobs | map('replace', ':', '-') | map('regex_replace', '$', '.yml') | list }}

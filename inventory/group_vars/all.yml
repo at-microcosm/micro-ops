@@ -6,4 +6,5 @@ operator_email: phil@bad-example.com
 node_exporter_version: "1.9.1"
 node_exporter_arch: linux-amd64 # override in host_vars for hosts on others
 
-node_exporter_listen: "{{ tailscale_ip }}:9100"
+node_exporter_port: 9100
+node_exporter_listen: "{{ tailscale_ip }}:{{ node_exporter_port }}"

@@ -1,0 +1,4 @@
+---
+ansible_host: cozy-ucosm-monitor
+ansible_user: phil
+tailscale_ip: 100.127.189.40

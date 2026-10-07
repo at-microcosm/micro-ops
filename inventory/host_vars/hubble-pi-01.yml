@@ -1,5 +1,5 @@
 ---
-ansible_host: hubble-pi-1
+ansible_host: hubble-pi-01
 ansible_user: phil
 tailscale_ip: 100.85.184.41
 node_exporter_arch: linux-arm64

@@ -1,0 +1,63 @@
+---
+# victoriametrics file_sd targets
+#
+# file-per-scrape-job from inventory hosts' `scrape_targets` (group_vars):
+#
+#   scrape_targets:
+#     - job: host
+#       port: "{{ node_exporter_port }}"
+#       labels:          # optional, added to target
+#         role: gateway
+#
+# targets: `<tailscale_ip>:<port>` with `job` and
+# `instance: <inventory_hostname>` labels. the target's `job` label overrides
+# the catch-all scrape job's name.
+#
+# deletes files for jobs no longer in inventory.
+#
+# victoriametrics re-reads these files automatically
+
+- name: make sure scrape hosts have tailnet addresses
+  ansible.builtin.assert:
+    that: hostvars[item].tailscale_ip | default('') is match('^100[.][0-9]+[.][0-9]+[.][0-9]+$')
+    fail_msg: "{{ item }} needs a real tailscale_ip in its host_vars"
+    quiet: true
+  loop: "{{ scrape_targets_hosts }}"
+
+- name: check the targets dir
+  ansible.builtin.stat:
+    path: "{{ scrape_targets_dir }}"
+  register: scrape_targets_dir_stat
+
+- name: make sure the targets dir exists
+  ansible.builtin.assert:
+    that: scrape_targets_dir_stat.stat.isdir | default(false)
+    fail_msg: >-
+      {{ scrape_targets_dir }} is missing. create it once, by hand:
+      sudo install -d -o {{ ansible_user }} -g {{ ansible_user }} -m 0755 {{ scrape_targets_dir }}
+    quiet: true
+
+- name: write target files
+  ansible.builtin.template:
+    src: targets.yml.j2
+    dest: "{{ scrape_targets_dir }}/{{ job | replace(':', '-') }}.yml"
+    mode: '0644'
+  loop: "{{ scrape_targets_jobs }}"
+  loop_control:
+    loop_var: job
+
+# after writing, so targets never briefly disappear
+- name: find target files
+  ansible.builtin.find:
+    paths: "{{ scrape_targets_dir }}"
+    patterns: "*.yml"
+  register: scrape_targets_found
+
+- name: remove target files for jobs no longer in inventory
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ scrape_targets_found.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  when: item.path | basename not in scrape_targets_files

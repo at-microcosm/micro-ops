@@ -1,0 +1,10 @@
+---
+# the monitor host itself is mostly manual except node_exporter
+#
+# run with --ask-become-pass
+- name: Monitor host
+  hosts: monitor
+  become: true
+  roles:
+    - nonlocal_bind # node_exporter binds tailnet ip
+    - node_exporter

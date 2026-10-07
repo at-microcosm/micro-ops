@@ -2,7 +2,7 @@
    names: nginx resolves names at startup and fails if tailscale isn't up. #}
 upstream cozy_{{ site.log }} {
 {% for up in site.upstreams %}
-    server {{ hostvars[up.host].tailscale_ip }}:{{ site.upstream_port }}{{ ' backup' if up.backup | default(false) else '' }}; # {{ up.host }}
+    server {{ hostvars[up.host].tailscale_ip }}:{{ site.upstream_port }} max_fails={{ gateway_upstream_max_fails }} fail_timeout={{ gateway_upstream_fail_timeout }}{{ ' backup' if up.backup | default(false) else '' }}; # {{ up.host }}
 {% endfor %}
     keepalive 16;
 }

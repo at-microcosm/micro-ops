@@ -10,7 +10,8 @@ hubble_data_dir: "{{ hubble_home }}/data"
 hubble_contact: "{{ operator_contact }}"
 
 hubble_bind: "127.0.0.1:3000"
-hubble_metrics_bind: "{{ tailscale_ip }}:9000" # scraped over the tailnet
+hubble_metrics_port: 9000
+hubble_metrics_bind: "{{ tailscale_ip }}:{{ hubble_metrics_port }}"
 
 hubble_rust_log: "info,hubble=debug,hubble_sync=info"
 
@@ -32,3 +33,11 @@ hubble_backup_interval: 24h
 hubble_backup_initial_delay: ~ # null: first backup after one full interval
 hubble_backup_retain: 6 # null keeps every backup forever
 hubble_backup_checkpoint_dir: ~ # null: <data-dir>/backup-checkpoint, same fs as the db
+
+scrape_targets:
+  - job: host
+    port: "{{ node_exporter_port }}"
+    labels:
+      role: hubble
+  - job: hubble
+    port: "{{ hubble_metrics_port }}"

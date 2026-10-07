@@ -1,0 +1,7 @@
+---
+# victoriametrics from inventory. cleans up removed hosts.
+- name: Scrape targets
+  hosts: monitor
+  gather_facts: false
+  roles:
+    - scrape_targets

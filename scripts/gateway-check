@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+# check if sites on each gateway are up
+#
+#   scripts/gateway-check                   # every host in the `gateway` group
+#   scripts/gateway-check gateway-lino-01   # just these
+#   scripts/gateway-check --no-v6           # from a network without ipv6
+#   scripts/gateway-check --from hubble-hetz-01  # run curl there (ssh)
+#
+# ips come from host_vars `public_ipv4` / `public_ipv6`.
+#
+# extend CHECKS below when adding a site.
+#
+# needs: ansible-inventory, jq, curl (and ssh + curl on a --from host)
+set -uo pipefail
+
+cd "$(dirname "$0")/.." || exit 1
+
+from=
+no_v6=
+while [ $# -gt 0 ]; do
+  case $1 in
+    --from) from=${2:?--from needs a host}; shift 2 ;;
+    --no-v6) no_v6=1; shift ;;
+    -*) echo "unknown option: $1" >&2; exit 2 ;;
+    *) break ;;
+  esac
+done
+
+# one multiplexed ssh connection for all the checks
+ssh_opts=(-o BatchMode=yes -o ConnectTimeout=10
+  -o ControlMaster=auto -o ControlPath=/tmp/gateway-check-%C -o ControlPersist=60)
+
+# url, wanted status, and `ws` for a websocket handshake.
+# `000`: connected but no http response. (not connecting at all -> FAIL)
+CHECKS='
+https://constellation.microcosm.blue/                                    200
+https://ufos-api.microcosm.blue/collections                              200
+https://spacedust.microcosm.blue/subscribe                               101 ws
+https://links.bsky.bad-example.com/links?target=x                        301
+http://constellation.microcosm.blue/                                     301
+http://ufos-api.microcosm.blue/                                          301
+http://spacedust.microcosm.blue/                                         301
+http://links.bsky.bad-example.com/                                       301
+http://constellation.microcosm.blue/.well-known/acme-challenge/nope      404
+https://unknown.example.com/                                             000
+http://unknown.example.com/                                              000
+'
+
+failed=0
+
+check() {
+  local host=$1 family=$2 ip=$3 url=$4 want=$5 ws=${6:-}
+  local proto=${url%%://*}
+  local rest=${url#*://}
+  local name=${rest%%/*}
+  local port=80 addr=$ip max_time=10
+
+  [ "$proto" = https ] && port=443
+  [ "$family" = v6 ] && addr="[$ip]"
+
+  local args=(-s -o /dev/null -w '%{http_code} %{num_connects}' --resolve "$name:$port:$addr")
+  if [ "$ws" = ws ]; then
+    # handshake only. after the 101 curl just waits, so a short timeout ends
+    # it, and the status is all we check.
+    max_time=3
+    args+=(--http1.1
+      -H 'Connection: Upgrade' -H 'Upgrade: websocket'
+      -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==')
+  fi
+
+  args+=(--connect-timeout 5 --max-time "$max_time" "$url")
+
+  local out rc got connects
+  if [ -n "$from" ]; then
+    # shellcheck disable=SC2029 # expanding locally is the point: %q quotes each arg for the remote shell
+    out=$(ssh "${ssh_opts[@]}" "$from" "$(printf '%q ' curl "${args[@]}")")
+  else
+    out=$(curl "${args[@]}")
+  fi
+  rc=$?
+  got=${out% *}
+  connects=${out#* }
+
+  # curl never exits 255, ssh does when it fails
+  if [ -n "$from" ] && [ "$rc" = 255 ]; then
+    printf 'FAIL  %-16s %s ssh to %s failed\n' "$host" "$family" "$from"
+    failed=1
+    return
+  fi
+
+  if [ "$connects" = 0 ]; then
+    printf 'FAIL  %-16s %s can'\''t connect to %s port %s (curl exit %s)\n' "$host" "$family" "$ip" "$port" "$rc"
+    failed=1
+    return
+  fi
+
+  if [ "$got" = "$want" ]; then
+    printf 'ok    %-16s %s %s %s\n' "$host" "$family" "$got" "$url"
+  else
+    printf 'FAIL  %-16s %s %s %s (want %s, curl exit %s)\n' "$host" "$family" "$got" "$url" "$want" "$rc"
+    failed=1
+  fi
+}
+
+[ -n "$from" ] && echo "checking from $from"
+
+if [ $# -eq 0 ]; then
+  # shellcheck disable=SC2046 # one hostname per word
+  set -- $(ansible-inventory --list | jq -r '.gateway.hosts[]')
+fi
+
+for host in "$@"; do
+  if ! vars=$(ansible-inventory --host "$host"); then
+    printf 'FAIL  %-16s not in inventory\n' "$host"
+    failed=1
+    continue
+  fi
+  v4=$(jq -r '.public_ipv4 // empty' <<< "$vars")
+  v6=$(jq -r '.public_ipv6 // empty' <<< "$vars")
+  if [ -z "$v4" ] && [ -z "$v6" ]; then
+    printf 'FAIL  %-16s no public_ipv4 / public_ipv6 in host_vars\n' "$host"
+    failed=1
+    continue
+  fi
+
+  for family in v4 v6; do
+    if [ "$family" = v6 ] && [ -n "$no_v6" ]; then
+      printf 'skip  %-16s v6 (--no-v6)\n' "$host"
+      continue
+    fi
+    if [ "$family" = v4 ]; then ip=$v4; else ip=$v6; fi
+    [ -z "$ip" ] && continue
+    while read -r url want ws; do
+      [ -z "$url" ] && continue
+      check "$host" "$family" "$ip" "$url" "$want" "$ws"
+    done <<< "$CHECKS"
+  done
+done
+
+exit "$failed"

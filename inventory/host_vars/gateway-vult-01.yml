@@ -1,3 +1,5 @@
 ---
 ansible_host: gateway-vult-01
 tailscale_ip: 100.74.132.28
+public_ipv4: 155.138.133.71
+public_ipv6: 2001:19f0:b002:4e6:5400:5ff:fe97:4db

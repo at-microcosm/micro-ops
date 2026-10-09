@@ -1,6 +1,8 @@
 ---
 ansible_host: gateway-lino-01
 tailscale_ip: 100.122.16.43
+public_ipv4: 172.105.12.224
+public_ipv6: 2600:3c04::2000:20ff:fe41:5dc3
 
 # check 502s vs the vultr host to see if this helps.
 # (tries to avoid retrying slow queries on the second host where they will

@@ -31,12 +31,15 @@ gateway_sites:
 nginx_worker_connections: 2048
 
 # nginx default is very slow, 60s; connects should always be fast.
-# fails everything over to the backup.
+# fails over to the backup after `gateway_upstream_max_fails`.
 gateway_upstream_connect_timeout: 2s
 
-# failover to `backup` upstreams. currently nginx defaults here (see lino host)
-gateway_proxy_next_upstream: error timeout
-gateway_upstream_max_fails: 1
+# failover to `backup` upstreams but not on `timeout` to somewhat avoid retrying
+# slow queries on the second host (they are probably just expensive.
+# connect timeouts affected, connection-refused fails over as expected.
+gateway_proxy_next_upstream: error
+# read timeouts count toward fails, tolerate some slow queries (we get 100s/sec)
+gateway_upstream_max_fails: 48
 gateway_upstream_fail_timeout: 10s
 
 nginxlog_exporter_version: "1.11.0"

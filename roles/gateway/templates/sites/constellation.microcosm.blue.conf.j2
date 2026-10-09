@@ -3,8 +3,8 @@
 
 server {
     server_name {{ site.name }};
-{% include 'sites/_tls.j2' %}
-    include snippets/gateway-acme.conf;
+    include snippets/tls-{{ site.name }}.conf;
+    include snippets/acme.conf;
 
     proxy_cache cozy_zone;
     # stale when upstream is failing
@@ -21,7 +21,7 @@ server {
     proxy_send_timeout 15s;
     proxy_socket_keepalive on;
 
-    include snippets/gateway-cors.conf;
+    include snippets/cors.conf;
 
     access_log /var/log/nginx/{{ site.log }}-access.log exporter;
     error_log /var/log/nginx/{{ site.log }}-error.log;
@@ -32,7 +32,7 @@ server {
 
     location / {
         proxy_pass http://cozy_{{ site.log }};
-        include snippets/gateway-proxy.conf;
+        include snippets/proxy.conf;
         proxy_set_header Connection ""; # upstream keepalive
     }
 }

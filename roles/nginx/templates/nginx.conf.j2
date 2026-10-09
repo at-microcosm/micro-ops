@@ -1,4 +1,4 @@
-# Managed by Ansible (roles/gateway)
+# Managed by Ansible (roles/nginx)
 user www-data;
 worker_processes auto;
 worker_cpu_affinity auto;
@@ -7,11 +7,11 @@ error_log /var/log/nginx/error.log;
 include /etc/nginx/modules-enabled/*.conf;
 
 # every client and upstream connection is an fd, plus cache files and logs.
-# systemd's default soft limit (1024) would otherwise cap connections first.
-worker_rlimit_nofile {{ gateway_worker_connections * 2 }};
+# (systemd's default soft limit is 1024)
+worker_rlimit_nofile {{ nginx_worker_connections * 2 }};
 
 events {
-    worker_connections {{ gateway_worker_connections }};
+    worker_connections {{ nginx_worker_connections }};
 }
 
 http {
@@ -33,7 +33,7 @@ http {
     ssl_session_timeout 1d;
     ssl_session_tickets off;
 
-    # websockets (spacedust) still gets http/1.1
+    # websockets still get http/1.1
     http2 on;
 
     ##
@@ -42,7 +42,7 @@ http {
     access_log /var/log/nginx/access.log;
 
     # parsed by prometheus-nginxlog-exporter, configured from the same var
-    log_format exporter '{{ gateway_log_format }}';
+    log_format exporter '{{ nginx_log_format }}';
 
     ##
     # gzip
@@ -52,12 +52,7 @@ http {
     gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
 
     ##
-    # cozy cache
-    ##
-    proxy_cache_path /var/cache/nginx keys_zone=cozy_zone:64m;
-
-    ##
-    # cozy limit
+    # per-client limit
     ##
 
     # v4 ip or v6 /64
@@ -70,13 +65,6 @@ http {
         default $binary_remote_addr;
     }
     limit_req_zone $cozy_client_ip zone=cozy_ip_limit:10m rate=50r/s;
-    limit_req_zone $server_name zone=cozy_global_limit:1m rate=1000r/s;
-
-    # websocket upgrades pass through; plain requests keep upstream keepalive
-    map $http_upgrade $gateway_ws_connection {
-        default upgrade;
-        ''      '';
-    }
 
     include /etc/nginx/conf.d/*.conf;
     include /etc/nginx/sites-enabled/*;

@@ -1,5 +1,6 @@
 ---
-# handlers run in file order (bad config stops play before nginx gets reloaded)
+# handlers run in file order, so `nginx -t` happens before systemd `reloaded`
+
 - name: check nginx config
   ansible.builtin.command: nginx -t
   changed_when: false

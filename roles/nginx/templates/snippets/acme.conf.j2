@@ -1,18 +1,18 @@
-# Managed by Ansible (roles/gateway): acme http-01 challenges.
+# Managed by Ansible (roles/nginx): acme http-01 challenges.
 #
-# forward acme challenges to peers if we have no answer (port 80 and 443 both)
+# forward acme challenges to peers if we have no answer
 location /.well-known/acme-challenge/ {
     limit_req zone=cozy_ip_limit nodelay burst=150;
-    root {{ gateway_acme_webroot }};
-{% if gateway_acme_peers %}
+    root {{ nginx_acme_webroot }};
+{% if nginx_acme_peers %}
     try_files $uri @acme_peers;
 {% else %}
     try_files $uri =404;
 {% endif %}
 }
-{% if gateway_acme_peers %}
+{% if nginx_acme_peers %}
 
-# not here: another gateway probably requested this token
+# not here: a peer probably requested this token
 location @acme_peers {
     proxy_pass http://acme_peers;
     proxy_cache off; # don't let a site's cache hold on to a miss

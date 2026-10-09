@@ -5,9 +5,12 @@
   roles:
     - nonlocal_bind # make stuff available on tailnet (which exists post-boot)
     - node_exporter
+    - role: nginx
+      nginx_names: "{{ gateway_sites | map(attribute='name') | list }}"
+      nginx_acme_peer_group: gateway
     - gateway
     - role: nginxlog_exporter
       nginxlog_exporter_logs: "{{ gateway_sites | selectattr('log', 'defined') | map(attribute='log') | list }}"
-      nginxlog_exporter_format: "{{ gateway_log_format }}"
+      nginxlog_exporter_format: "{{ nginx_log_format }}"
     - role: cert_check
       cert_check_names: "{{ gateway_sites | map(attribute='name') | list }}"

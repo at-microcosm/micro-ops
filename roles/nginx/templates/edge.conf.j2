@@ -1,0 +1,54 @@
+# Managed by Ansible (roles/nginx): acme http-01 + default servers
+
+# port 80 for our names: acme challenges, everything else goes to https
+# TODO: actually, we should not normally redirect port 80 to 443 since these are
+# API requests that the client must fix. We *could* sniff the UA and keep the
+# redirect for browser-looking requests though. Our response otherwise should
+# tell the client that they need to use https. (maybe we can serve a bare-bones
+# html page with a meta-redirect header after a delay?)
+server {
+    listen 80;
+    listen [::]:80;
+    server_name {{ nginx_names | join(' ') }};
+
+    include snippets/acme.conf;
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+{% if nginx_acme_peers %}
+
+upstream acme_peers {
+{% for peer in nginx_acme_peers %}
+    server {{ hostvars[peer].tailscale_ip }}:{{ nginx_acme_peer_port }}; # {{ peer }}
+{% endfor %}
+}
+{% endif %}
+
+# where peers look for tokens. tailnet only, never forwards.
+server {
+    listen {{ tailscale_ip }}:{{ nginx_acme_peer_port }};
+
+    location /.well-known/acme-challenge/ {
+        root {{ nginx_acme_webroot }};
+        try_files $uri =404;
+    }
+
+    location / {
+        return 404;
+    }
+}
+
+# not our names
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    return 444;
+}
+
+server {
+    listen 443 ssl default_server;
+    listen [::]:443 ssl default_server;
+    ssl_reject_handshake on;
+}

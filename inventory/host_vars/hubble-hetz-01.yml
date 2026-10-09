@@ -6,7 +6,7 @@ hubble_extra_public_hosts:
   - hubble.microcosm.blue
 hubble_root_redirect: https://web.hubble.microcosm.blue
 
-hubble_version: backup
+hubble_version: main
 
 # push backups to hubble_big's tigris bucket. tigris is virtual-hosted style,
 # so the bucket goes in the hostname and hubble_backup_bucket stays unset.

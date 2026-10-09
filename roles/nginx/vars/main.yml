@@ -1,0 +1,3 @@
+---
+# the rest of the peer group (for acme challenge forwarding)
+nginx_acme_peers: "{{ (groups[nginx_acme_peer_group] | difference([inventory_hostname])) if nginx_acme_peer_group else [] }}"

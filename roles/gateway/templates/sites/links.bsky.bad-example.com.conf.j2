@@ -26,8 +26,8 @@ log_format links_debug escape=json '{'
 
 server {
     server_name {{ site.name }};
-{% include 'sites/_tls.j2' %}
-    include snippets/gateway-acme.conf;
+    include snippets/tls-{{ site.name }}.conf;
+    include snippets/acme.conf;
 
     access_log /var/log/nginx/links-access.log links_debug;
     error_log /var/log/nginx/links-error.log;

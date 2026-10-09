@@ -8,3 +8,6 @@ node_exporter_arch: linux-amd64 # override in host_vars for hosts on others
 
 node_exporter_port: 9100
 node_exporter_listen: "{{ tailscale_ip }}:{{ node_exporter_port }}"
+
+# shared for nginx / nginxlog_exporter (metrics)
+nginx_log_format: '$remote_addr - $remote_user [$time_local] "$request" $status $upstream_cache_status $body_bytes_sent "$http_referer" "$http_user_agent" $request_time'

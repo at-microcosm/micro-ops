@@ -1,0 +1,181 @@
+---
+# base nginx config (certs with peer challenge forwarding, logs, etc)
+#
+# certbot doesn't use the `--nginx` plugin, just webroots that nginx points to
+#
+# - app-specific config -> `conf.d/<role>.conf`
+# - ansible context -> `nginx_live_names`
+#
+# params:
+#   - nginx_names: tls/host names
+#   - nginx_acme_peer_group: peers to forward acme challenge misses to
+#
+# tags:
+#   - `certs` (playbook `--skip-tags certs` on first run on new hosts)
+
+- name: make sure we have names to serve
+  ansible.builtin.assert:
+    that: nginx_names | length > 0
+    fail_msg: "roles/nginx needs nginx_names"
+    quiet: true
+
+- name: make sure we have tailnet addresses
+  ansible.builtin.assert:
+    that: hostvars[item].tailscale_ip | default('') is match('^100[.][0-9]+[.][0-9]+[.][0-9]+$')
+    fail_msg: "{{ item }} needs a real tailscale_ip in its host_vars"
+    quiet: true
+  loop: "{{ [inventory_hostname] + nginx_acme_peers }}"
+
+- name: "deps"
+  ansible.builtin.apt:
+    name:
+      - nginx
+      - certbot
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: create acme webroot
+  ansible.builtin.file:
+    path: "{{ nginx_acme_webroot }}"
+    state: directory
+    mode: '0755'
+
+- name: install nginx.conf
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+  notify: reload nginx
+
+- name: install snippets
+  ansible.builtin.template:
+    src: "snippets/{{ item }}.j2"
+    dest: "/etc/nginx/snippets/{{ item }}"
+  loop:
+    - acme.conf
+    - cors.conf
+    - proxy.conf
+  notify: reload nginx
+
+- name: install acme + default servers
+  ansible.builtin.template:
+    src: edge.conf.j2
+    dest: /etc/nginx/conf.d/edge.conf
+  notify: reload nginx
+
+- name: remove default nginx site
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: reload nginx
+
+- name: enable nginx
+  ansible.builtin.systemd_service:
+    name: nginx
+    enabled: true
+    state: started
+
+- name: cap log sizes
+  ansible.builtin.template:
+    src: logrotate.j2
+    dest: /etc/logrotate.d/nginx
+    mode: '0644'
+
+- name: create logrotate timer drop-in dir
+  ansible.builtin.file:
+    path: /etc/systemd/system/logrotate.timer.d
+    state: directory
+    mode: '0755'
+
+# default is daily
+- name: run logrotate hourly
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/logrotate.timer.d/hourly.conf
+    content: |
+      # Managed by Ansible (roles/nginx): hourly, so nginx logs' maxsize gets checked
+      [Timer]
+      OnCalendar=
+      OnCalendar=hourly
+    mode: '0644'
+  register: nginx_logrotate_timer
+
+- name: apply logrotate timer change
+  ansible.builtin.systemd_service:
+    name: logrotate.timer
+    state: restarted
+    daemon_reload: true
+  when: nginx_logrotate_timer.changed
+
+- name: check which names have certs
+  ansible.builtin.stat:
+    path: "/etc/letsencrypt/live/{{ item }}/fullchain.pem"
+  loop: "{{ nginx_names }}"
+  register: nginx_cert_stats_before
+
+# only reload mid-run when we need certbot. otherwise everything gets written
+# first and nginx reloads once at the end (also: a half-written config across
+# roles never gets checked or loaded).
+- name: issue missing certs
+  vars:
+    nginx_missing_names: "{{ nginx_cert_stats_before.results | rejectattr('stat.exists') | map(attribute='item') | list }}"
+  when: nginx_missing_names | length > 0
+  tags: certs
+  block:
+    # certbot needs acme serving live before it asks for validation
+    - name: check nginx config before certbot
+      ansible.builtin.command: nginx -t
+      changed_when: false
+
+    - name: reload nginx before certbot
+      ansible.builtin.systemd_service:
+        name: nginx
+        state: reloaded
+
+    - name: obtain certs
+      ansible.builtin.command:
+        cmd: >-
+          certbot certonly --webroot -w {{ nginx_acme_webroot }}
+          -n --agree-tos -m {{ operator_email }}
+          --cert-name {{ item }} -d {{ item }}
+        creates: "/etc/letsencrypt/live/{{ item }}/fullchain.pem"
+      loop: "{{ nginx_missing_names }}"
+
+- name: create certbot deploy hooks dir
+  ansible.builtin.file:
+    path: /etc/letsencrypt/renewal-hooks/deploy
+    state: directory
+    mode: '0755'
+
+- name: reload nginx after cert renewals
+  ansible.builtin.copy:
+    dest: /etc/letsencrypt/renewal-hooks/deploy/reload-nginx
+    content: |
+      #!/bin/sh
+      # Managed by Ansible (roles/nginx): serve renewed certs
+      exec systemctl reload nginx
+    mode: '0755'
+
+- name: check which names have certs now
+  ansible.builtin.stat:
+    path: "/etc/letsencrypt/live/{{ item }}/fullchain.pem"
+  loop: "{{ nginx_names }}"
+  register: nginx_cert_stats
+
+- name: list names with certs
+  ansible.builtin.set_fact:
+    nginx_live_names: "{{ nginx_cert_stats.results | selectattr('stat.exists') | map(attribute='item') | list }}"
+
+- name: note names without certs
+  ansible.builtin.debug:
+    msg: >-
+      no cert yet, not serving:
+      {{ nginx_names | difference(nginx_live_names) | join(', ') }}
+  when: nginx_live_names | length < nginx_names | length
+
+- name: install tls snippets
+  ansible.builtin.template:
+    src: tls.conf.j2
+    dest: "/etc/nginx/snippets/tls-{{ name }}.conf"
+  loop: "{{ nginx_live_names }}"
+  loop_control:
+    loop_var: name
+  notify: reload nginx

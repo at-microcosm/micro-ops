@@ -1,0 +1,14 @@
+---
+# names this host serves (port-80 server, certs, `nginx_live_names`)
+nginx_names: []
+
+# optional, challenge misses get forwarded to other hosts in the group
+nginx_acme_peer_group: ~
+
+nginx_worker_connections: 1024
+
+# checked hourly
+nginx_log_maxsize: 200M
+
+nginx_acme_webroot: /var/lib/acme-webroot
+nginx_acme_peer_port: 8402 # tailnet-only challenge-forwards between peers

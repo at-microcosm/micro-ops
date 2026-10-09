@@ -2,23 +2,18 @@
 # public reverse proxy: nginx in front of services at the house, over the
 # tailnet.
 #
-# ansible owns nginx entirely now, certbot just issues webroot certs.
-#
-# tags:
-#   - `certs`: cert issuance. run playbook with `--skip-tags certs` on new hosts first
+# should go after roles/nginx (base config, certs, etc).
 
-- name: make sure we have tailnet addresses
+- name: make sure upstream hosts have tailnet addresses
   ansible.builtin.assert:
     that: hostvars[item].tailscale_ip | default('') is match('^100[.][0-9]+[.][0-9]+[.][0-9]+$')
     fail_msg: "{{ item }} needs a real tailscale_ip in its host_vars"
     quiet: true
-  loop: "{{ [inventory_hostname] + gateway_acme_peers + gateway_upstream_hosts }}"
+  loop: "{{ gateway_upstream_hosts }}"
 
 - name: "deps"
   ansible.builtin.apt:
     name:
-      - nginx
-      - certbot
       - ufw # only so allowing web ports works
     update_cache: true
     cache_valid_time: 3600
@@ -33,95 +28,11 @@
     - "80"
     - "443"
 
-- name: create acme webroot
-  ansible.builtin.file:
-    path: "{{ gateway_acme_webroot }}"
-    state: directory
-    mode: '0755'
-
-- name: install nginx.conf
-  ansible.builtin.template:
-    src: nginx.conf.j2
-    dest: /etc/nginx/nginx.conf
-  notify: reload nginx
-
-- name: install snippets
-  ansible.builtin.template:
-    src: "snippets/{{ item }}.j2"
-    dest: "/etc/nginx/snippets/{{ item }}"
-  loop:
-    - gateway-acme.conf
-    - gateway-cors.conf
-    - gateway-proxy.conf
-  notify: reload nginx
-
-- name: install acme + default servers
+- name: install gateway http config
   ansible.builtin.template:
     src: gateway.conf.j2
     dest: /etc/nginx/conf.d/gateway.conf
   notify: reload nginx
-
-- name: remove default nginx site
-  ansible.builtin.file:
-    path: /etc/nginx/sites-enabled/default
-    state: absent
-  notify: reload nginx
-
-- name: enable nginx
-  ansible.builtin.systemd_service:
-    name: nginx
-    enabled: true
-    state: started
-
-# certbot needs acme serving live before it asks for validation
-- name: apply nginx config
-  ansible.builtin.meta: flush_handlers
-
-- name: obtain certs
-  ansible.builtin.command:
-    cmd: >-
-      certbot certonly --webroot -w {{ gateway_acme_webroot }}
-      -n --agree-tos -m {{ operator_email }}
-      --cert-name {{ item.name }} -d {{ item.name }}
-    creates: "/etc/letsencrypt/live/{{ item.name }}/fullchain.pem"
-  loop: "{{ gateway_sites }}"
-  loop_control:
-    label: "{{ item.name }}"
-  tags: certs
-
-- name: create certbot deploy hooks dir
-  ansible.builtin.file:
-    path: /etc/letsencrypt/renewal-hooks/deploy
-    state: directory
-    mode: '0755'
-
-- name: reload nginx after cert renewals
-  ansible.builtin.copy:
-    dest: /etc/letsencrypt/renewal-hooks/deploy/reload-nginx
-    content: |
-      #!/bin/sh
-      # Managed by Ansible (roles/gateway): serve renewed certs
-      exec systemctl reload nginx
-    mode: '0755'
-
-- name: check which sites have certs
-  ansible.builtin.stat:
-    path: "/etc/letsencrypt/live/{{ item.name }}/fullchain.pem"
-  loop: "{{ gateway_sites }}"
-  loop_control:
-    label: "{{ item.name }}"
-  register: gateway_cert_stats
-
-- name: list sites with certs
-  ansible.builtin.set_fact:
-    gateway_live_sites: "{{ gateway_cert_stats.results | selectattr('stat.exists') | map(attribute='item') | list }}"
-
-- name: note sites without certs
-  ansible.builtin.debug:
-    msg: >-
-      no cert yet, not serving:
-      {{ gateway_sites | map(attribute='name') | difference(gateway_live_sites | map(attribute='name')) | join(', ') }}
-  when: gateway_live_sites | length < gateway_sites | length
 
 - name: install site configs
   ansible.builtin.template:

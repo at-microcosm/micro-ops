@@ -1,49 +1,23 @@
-# Managed by Ansible (roles/gateway): acme http-01 + default servers
+# Managed by Ansible (roles/gateway): http-level gateway config.
 
-# port 80 for our names: acme challenges, everything else goes to https
-server {
-    listen 80;
-    listen [::]:80;
-    server_name {{ gateway_sites | map(attribute='name') | join(' ') }};
+##
+# cozy cache
+##
+proxy_cache_path /var/cache/nginx keys_zone=cozy_zone:64m;
 
-    include snippets/gateway-acme.conf;
+##
+# cozy limit (per-ip `cozy_ip_limit` zone in nginx.conf)
+##
+limit_req_zone $server_name zone=cozy_global_limit:1m rate=1000r/s;
 
-    location / {
-        return 301 https://$host$request_uri;
-    }
-}
-{% if gateway_acme_peers %}
-
-upstream acme_peers {
-{% for peer in gateway_acme_peers %}
-    server {{ hostvars[peer].tailscale_ip }}:{{ gateway_acme_peer_port }}; # {{ peer }}
-{% endfor %}
-}
-{% endif %}
-
-# where the other gateways look for tokens. tailnet only, never forwards.
-server {
-    listen {{ tailscale_ip }}:{{ gateway_acme_peer_port }};
-
-    location /.well-known/acme-challenge/ {
-        root {{ gateway_acme_webroot }};
-        try_files $uri =404;
-    }
-
-    location / {
-        return 404;
-    }
+# websocket upgrades pass through; plain requests keep upstream keepalive
+map $http_upgrade $gateway_ws_connection {
+    default upgrade;
+    ''      '';
 }
 
-# names we don't serve
-server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
-    return 444;
-}
-
-server {
-    listen 443 ssl default_server;
-    listen [::]:443 ssl default_server;
-    ssl_reject_handshake on;
-}
+##
+# upstream failover for every proxied location
+##
+proxy_connect_timeout {{ gateway_upstream_connect_timeout }};
+proxy_next_upstream {{ gateway_proxy_next_upstream }};

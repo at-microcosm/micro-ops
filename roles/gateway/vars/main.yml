@@ -1,6 +1,6 @@
 ---
-# the other gateways (for acme challenge forwarding)
-gateway_acme_peers: "{{ groups['gateway'] | difference([inventory_hostname]) }}"
-
 # inventory hosts that some site proxies to
 gateway_upstream_hosts: "{{ gateway_sites | map(attribute='upstreams', default=[]) | flatten | map(attribute='host') | unique }}"
+
+# sites with certs (`nginx_live_names` from roles/nginx)
+gateway_live_sites: "{{ gateway_sites | selectattr('name', 'in', nginx_live_names) | list }}"

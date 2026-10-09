@@ -4,7 +4,7 @@ ansible_user: phil
 tailscale_ip: 100.85.184.41
 node_exporter_arch: linux-arm64
 
-hubble_version: sync-inversion
+hubble_version: main
 
 hubble_bind: "0.0.0.0:3000"
 
@@ -20,7 +20,7 @@ hubble_mode_args:
 hubble_tuning_args:
   - --repo-backpressure-retry-sleep 200
   - --repo-backpressure-max-retries 2048
-  - --max-repo-actors 32768
+  - --max-repo-actors 24576
   - --max-resync-concurrency 32
   - --max-big-repo-resync-concurrency 2
   - --rocksdb-background-jobs 3

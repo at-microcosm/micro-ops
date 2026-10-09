@@ -1,7 +1,10 @@
 ---
 ansible_host: hubble-serv-01
 tailscale_ip: 100.111.249.119
-# hubble_public_host: <TODO set up dns>
+
+# not in dns for now
+hubble_public_host: hubble.microcosm.blue
+nginx_issue_certs: false
 
 hubble_version: main
 

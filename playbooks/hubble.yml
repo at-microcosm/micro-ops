@@ -10,9 +10,15 @@
       when: hubble_storage_device is defined
     - node_exporter
     - hubble
-    - role: nginx_tls
-      nginx_tls_host: "{{ hubble_public_host }}"
-      nginx_tls_extra_hosts: "{{ hubble_extra_public_hosts | default([]) }}"
-      nginx_tls_upstream: "{{ hubble_bind }}"
-      nginx_tls_root_redirect: "{{ hubble_root_redirect | default('') }}"
-      when: hubble_public_host is defined
+    - role: nginx
+      nginx_names:
+        - "{{ hubble_public_host }}"
+    - hubble_proxy
+    - role: nginxlog_exporter
+      nginxlog_exporter_logs:
+        - hubble
+      nginxlog_exporter_format: "{{ nginx_log_format }}"
+    - role: cert_check
+      cert_check_names:
+        - "{{ hubble_public_host }}"
+      when: nginx_issue_certs | default(true)

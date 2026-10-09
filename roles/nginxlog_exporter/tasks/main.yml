@@ -9,14 +9,11 @@
 #     into a metrics namespace of the same name
 #   - nginxlog_exporter_format: the nginx log_format those logs are written in
 
-- name: install prometheus-nginxlog-exporter {{ nginxlog_exporter_version }}
-  ansible.builtin.apt:
-    deb: "https://github.com/martin-helmich/prometheus-nginxlog-exporter/releases/download/v{{ nginxlog_exporter_version }}/prometheus-nginxlog-exporter_{{ nginxlog_exporter_version }}_{{ nginxlog_exporter_arch }}.deb"
-  notify: restart nginxlog exporter
-
 # upstream's unit runs as root with every capability dropped, so it can't get
 # into /var/log/nginx (www-data:adm 0750). read the logs as a member of adm
 # instead, which also keeps the exporter from writing to them.
+#
+# runs before install bc the package starts the service immediately
 - name: create exporter unit drop-in dir
   ansible.builtin.file:
     path: /etc/systemd/system/prometheus-nginxlog-exporter.service.d
@@ -32,6 +29,11 @@
       DynamicUser=yes
       SupplementaryGroups=adm
     mode: '0644'
+  notify: restart nginxlog exporter
+
+- name: install prometheus-nginxlog-exporter {{ nginxlog_exporter_version }}
+  ansible.builtin.apt:
+    deb: "https://github.com/martin-helmich/prometheus-nginxlog-exporter/releases/download/v{{ nginxlog_exporter_version }}/prometheus-nginxlog-exporter_{{ nginxlog_exporter_version }}_{{ nginxlog_exporter_arch }}.deb"
   notify: restart nginxlog exporter
 
 # so the exporter has something to follow before a site first serves traffic

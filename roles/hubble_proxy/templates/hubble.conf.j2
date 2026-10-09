@@ -1,0 +1,37 @@
+# Managed by Ansible (roles/hubble_proxy)
+upstream hubble_app {
+    server {{ hubble_bind }};
+    keepalive 16;
+}
+
+server {
+    server_name {{ hubble_public_host }};
+    include snippets/tls-{{ hubble_public_host }}.conf;
+    include snippets/acme.conf;
+
+    # http/1.1 only for now, might be worth revisiting later
+    http2 off;
+
+    include snippets/cors.conf;
+
+    access_log /var/log/nginx/hubble-access.log exporter;
+    error_log /var/log/nginx/hubble-error.log;
+{% if hubble_root_redirect | default('') %}
+
+    location = / {
+        return 302 {{ hubble_root_redirect }};
+    }
+{% endif %}
+
+    location / {
+        proxy_pass http://hubble_app;
+        include snippets/proxy.conf;
+        proxy_set_header Connection ""; # upstream keepalive
+        proxy_read_timeout 300s; # big repos are slow
+        proxy_send_timeout 300s;
+
+        # don't buffer reponses (archives are sometimes big). exposes hubble to
+        # clients doing slow response reads.
+        proxy_buffering off;
+    }
+}

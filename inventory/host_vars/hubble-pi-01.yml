@@ -3,6 +3,11 @@ ansible_host: hubble-pi-01
 ansible_user: phil
 tailscale_ip: 100.85.184.41
 node_exporter_arch: linux-arm64
+nginxlog_exporter_arch: linux_arm64
+
+# not actually in dns for now
+hubble_public_host: hubble-pi.microcosm.blue
+nginx_issue_certs: false
 
 hubble_version: main
 

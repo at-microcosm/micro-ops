@@ -1,0 +1,19 @@
+---
+# tls for hubble -> hubble_bind
+#
+# run after roles/nginx
+
+- name: install hubble site
+  ansible.builtin.template:
+    src: hubble.conf.j2
+    dest: "/etc/nginx/sites-available/{{ hubble_public_host }}"
+  when: hubble_public_host in nginx_live_names
+  notify: reload nginx
+
+- name: enable hubble site
+  ansible.builtin.file:
+    src: "/etc/nginx/sites-available/{{ hubble_public_host }}"
+    dest: "/etc/nginx/sites-enabled/{{ hubble_public_host }}"
+    state: link
+  when: hubble_public_host in nginx_live_names
+  notify: reload nginx

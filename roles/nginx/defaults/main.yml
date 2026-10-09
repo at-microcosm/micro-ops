@@ -5,6 +5,9 @@ nginx_names: []
 # optional, challenge misses get forwarded to other hosts in the group
 nginx_acme_peer_group: ~
 
+# certbot never tries to issue when this is false
+nginx_issue_certs: true
+
 nginx_worker_connections: 1024
 
 # checked hourly

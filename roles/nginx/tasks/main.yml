@@ -117,7 +117,7 @@
 - name: issue missing certs
   vars:
     nginx_missing_names: "{{ nginx_cert_stats_before.results | rejectattr('stat.exists') | map(attribute='item') | list }}"
-  when: nginx_missing_names | length > 0
+  when: nginx_issue_certs and nginx_missing_names | length > 0
   tags: certs
   block:
     # certbot needs acme serving live before it asks for validation

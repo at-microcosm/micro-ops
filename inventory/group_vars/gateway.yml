@@ -42,11 +42,6 @@ gateway_proxy_next_upstream: error
 gateway_upstream_max_fails: 48
 gateway_upstream_fail_timeout: 10s
 
-nginxlog_exporter_version: "1.11.0"
-nginxlog_exporter_arch: linux_amd64
-nginxlog_exporter_address: "{{ tailscale_ip }}" # scraped over the tailnet
-nginxlog_exporter_port: 4044
-
 # for $request_time (`nginx_http_response_time_seconds_hist`).
 # fast buckets for cache hits, others around thresholds: cache (1/2s, 3/8s),
 # read timeouts (5s, 10s), spacedust's 60s.

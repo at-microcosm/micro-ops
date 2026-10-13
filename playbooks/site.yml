@@ -1,0 +1,15 @@
+---
+# run everything
+#
+# mostly maintenance-mondays convenience, careful deploys should use specific
+# playbooks (and `-l <instance>` for staged roll-outs)
+#
+# needs `-e @secrets.yml`
+
+- import_playbook: gateway.yml
+- import_playbook: hubble.yml
+# - import_playbook: monitor.yml // runs manually with --ask-become-pass
+- import_playbook: plc.yml
+
+# always last
+- import_playbook: scrape-targets.yml

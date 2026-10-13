@@ -37,18 +37,18 @@
     src: plc-health.service
     dest: /etc/systemd/system/plc-health.service
     mode: '0644'
-  register: plc_health_service
+  notify: restart plc-health timer
 
 - name: install systemd timer
   ansible.builtin.template:
     src: plc-health.timer.j2
     dest: /etc/systemd/system/plc-health.timer
     mode: '0644'
-  register: plc_health_timer
+  notify: restart plc-health timer
 
 - name: enable freshness check
   ansible.builtin.systemd_service:
     name: plc-health.timer
     enabled: true
-    state: "{{ 'restarted' if plc_health_timer.changed else 'started' }}"
-    daemon_reload: "{{ plc_health_service.changed or plc_health_timer.changed }}"
+    state: started
+    daemon_reload: true

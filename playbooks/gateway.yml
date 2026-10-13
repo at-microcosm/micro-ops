@@ -2,6 +2,7 @@
 - name: Deploy gateway
   hosts: gateway
   become: true
+  serial: 1 # one at a time, so if something breaks we don't take both down
   roles:
     - nonlocal_bind # make stuff available on tailnet (which exists post-boot)
     - node_exporter

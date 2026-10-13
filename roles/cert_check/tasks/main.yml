@@ -33,11 +33,11 @@
   loop:
     - cert-check.service
     - cert-check.timer
-  register: cert_check_units
+  notify: restart cert-check timer
 
 - name: enable daily check
   ansible.builtin.systemd_service:
     name: cert-check.timer
     enabled: true
     state: started
-    daemon_reload: "{{ cert_check_units.changed }}"
+    daemon_reload: true

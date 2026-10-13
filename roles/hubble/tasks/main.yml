@@ -89,7 +89,6 @@
   ansible.builtin.template:
     src: hubble.service.j2
     dest: /etc/systemd/system/hubble.service
-  register: hubble_unit
   notify: restart hubble
   tags: service
 
@@ -98,5 +97,5 @@
     name: hubble
     enabled: true
     state: started
-    daemon_reload: "{{ hubble_unit.changed }}"
+    daemon_reload: true
   tags: service

@@ -96,14 +96,7 @@
       OnCalendar=
       OnCalendar=hourly
     mode: '0644'
-  register: nginx_logrotate_timer
-
-- name: apply logrotate timer change
-  ansible.builtin.systemd_service:
-    name: logrotate.timer
-    state: restarted
-    daemon_reload: true
-  when: nginx_logrotate_timer.changed
+  notify: restart logrotate timer
 
 - name: check which names have certs
   ansible.builtin.stat:

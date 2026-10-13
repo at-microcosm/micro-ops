@@ -5,3 +5,4 @@
   gather_facts: false
   roles:
     - scrape_targets
+    - alert_rules

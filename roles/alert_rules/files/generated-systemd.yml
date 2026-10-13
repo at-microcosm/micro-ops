@@ -1,0 +1,11 @@
+# Managed by Ansible (roles/alert_rules)
+groups:
+  - name: systemd
+    rules:
+      - alert: SystemdUnitFailed
+        expr: node_systemd_unit_state{state="failed"} == 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.instance }}: {{ $labels.name }} failed"

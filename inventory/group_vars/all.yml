@@ -14,5 +14,8 @@ nginxlog_exporter_arch: linux_amd64
 nginxlog_exporter_address: "{{ tailscale_ip }}"
 nginxlog_exporter_port: 4044
 
+disk_alert_warn_free: 0.15 # 7-day minimum
+disk_alert_urgent_free: 0.05 # current usage
+
 # shared for nginx / nginxlog_exporter (metrics)
 nginx_log_format: '$remote_addr - $remote_user [$time_local] "$request" $status $upstream_cache_status $body_bytes_sent "$http_referer" "$http_user_agent" $request_time'

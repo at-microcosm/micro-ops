@@ -1,0 +1,55 @@
+---
+# rule files from inventory -> `generated-*.yml` in vmalert_rules_dir.
+# vmalert finds them automatically.
+#
+# - disk: free space, inodes on real filesystems.
+#   override in host_vars:
+#
+#     disk_alert_overrides:
+#       - mountpoint: /mnt/hubble
+#         warn_free: 0.20
+#         urgent_free: 0.10
+#
+# - systemd: failed units via node_exporter's systemd collector
+#
+# only touches `generated-*` files
+
+- name: check the rules dir
+  ansible.builtin.stat:
+    path: "{{ vmalert_rules_dir }}"
+  register: alert_rules_dir_stat
+
+- name: make sure the rules dir exists
+  ansible.builtin.assert:
+    that: alert_rules_dir_stat.stat.isdir | default(false)
+    fail_msg: "{{ vmalert_rules_dir }} is missing: run playbooks/monitor.yml first (roles/vmalert creates it)"
+    quiet: true
+
+- name: write disk rules
+  ansible.builtin.template:
+    src: generated-disk.yml.j2
+    dest: "{{ vmalert_rules_dir }}/generated-disk.yml"
+    mode: '0644'
+    validate: /usr/local/bin/vmalert-prod -dryRun -rule=%s
+
+- name: write systemd rules
+  ansible.builtin.copy:
+    src: generated-systemd.yml
+    dest: "{{ vmalert_rules_dir }}/generated-systemd.yml"
+    mode: '0644'
+    validate: /usr/local/bin/vmalert-prod -dryRun -rule=%s
+
+- name: find generated rule files
+  ansible.builtin.find:
+    paths: "{{ vmalert_rules_dir }}"
+    patterns: "generated-*.yml"
+  register: alert_rules_found
+
+- name: remove generated rule files we no longer write
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ alert_rules_found.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  when: item.path | basename not in ['generated-disk.yml', 'generated-systemd.yml']

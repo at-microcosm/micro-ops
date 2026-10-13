@@ -21,6 +21,16 @@ route:
       group_interval: 1m
       repeat_interval: 1m
 
+    - receiver: everyone
+      matchers:
+        - severity = "urgent"
+      repeat_interval: 2h
+
+    - receiver: everyone
+      matchers:
+        - severity = "warning"
+      repeat_interval: 170h
+
 receivers:
   - name: everyone
     email_configs:

@@ -1,0 +1,81 @@
+# Managed by Ansible (roles/alert_rules): disk space and inode alerts
+{% set fs = 'fstype!~"tmpfs|ramfs|squashfs|overlay|efivarfs"' %}
+{% set ns = namespace(overrides=[], skip=[]) %}
+{% for host in groups['all'] %}
+{% for o in hostvars[host].disk_alert_overrides | default([]) %}
+{% set ns.overrides = ns.overrides + [{
+  'instance': host,
+  'mountpoint': o.mountpoint,
+  'warn': o.warn_free | default(disk_alert_warn_free),
+  'urgent': o.urgent_free | default(disk_alert_urgent_free),
+}] %}
+{% set ns.skip = ns.skip + [
+  'node_filesystem_free:ratio{instance="' ~ host ~ '",mountpoint="' ~ o.mountpoint ~ '"}'
+] %}
+{% endfor %}
+{% endfor %}
+{# defaults leave out every overridden mount #}
+{% set unless = (' unless on(instance, mountpoint) (' ~ (ns.skip | join(' or ')) ~ ')') if ns.skip else '' %}
+{#
+  rec: selector for the recording-rule series ('' or {instance=..,mountpoint=..})
+  raw: selector for raw node_filesystem_* series (always includes the fs filter)
+#}
+{% macro disk_rules(rec, raw, warn, urgent, unless) %}
+      # warning: the 7-day minimum, catches transient spikes
+      - alert: DiskSpaceLow
+        expr: 'min_over_time(node_filesystem_free:ratio{{ rec }}[7d]) < {{ warn }}{{ unless }}'
+        labels:
+          severity: warning
+        annotations:
+          summary: {% raw %}"{{ $labels.instance }} {{ $labels.mountpoint }}: 7-day min free space dropped to {{ $value | humanizePercentage }}"{% endraw %}
+
+      - alert: DiskSpaceCritical
+        expr: 'node_filesystem_free:ratio{{ rec }} < {{ urgent }}{{ unless }}'
+        for: 5m
+        labels:
+          severity: urgent
+        annotations:
+          summary: {% raw %}"{{ $labels.instance }} {{ $labels.mountpoint }}: {{ $value | humanizePercentage }} free"{% endraw %}
+
+      # in warning and might fill within 4h
+      - alert: DiskFillingFast
+        expr: '(node_filesystem_free:ratio{{ rec }} < {{ warn }} and predict_linear(node_filesystem_avail_bytes{{ raw }}[4h], 4 * 3600) < 0){{ unless }}'
+        for: 15m
+        labels:
+          severity: urgent
+        annotations:
+          summary: {% raw %}"{{ $labels.instance }} {{ $labels.mountpoint }}: space filling quickly, possibly out in under 4h"{% endraw %}
+
+      - alert: InodesLow
+        expr: 'min_over_time(node_filesystem_files_free:ratio{{ rec }}[7d]) < {{ warn }}{{ unless }}'
+        labels:
+          severity: warning
+        annotations:
+          summary: {% raw %}"{{ $labels.instance }} {{ $labels.mountpoint }}: 7-day free inodes dropped to {{ $value | humanizePercentage }}"{% endraw %}
+
+      - alert: InodesCritical
+        expr: 'node_filesystem_files_free:ratio{{ rec }} < {{ urgent }}{{ unless }}'
+        for: 5m
+        labels:
+          severity: urgent
+        annotations:
+          summary: {% raw %}"{{ $labels.instance }} {{ $labels.mountpoint }}: {{ $value | humanizePercentage }} of inodes free"{% endraw %}
+{% endmacro %}
+groups:
+  - name: disk-recording
+    rules:
+      - record: node_filesystem_free:ratio
+        expr: 'node_filesystem_avail_bytes{{ '{' ~ fs ~ '}' }} / node_filesystem_size_bytes{{ '{' ~ fs ~ '}' }}'
+      - record: node_filesystem_files_free:ratio
+        expr: 'node_filesystem_files_free{{ '{' ~ fs ~ '}' }} / (node_filesystem_files{{ '{' ~ fs ~ '}' }} > 0)'
+
+  - name: disk
+    rules:
+{{ disk_rules('', '{' ~ fs ~ '}', disk_alert_warn_free, disk_alert_urgent_free, unless) }}
+{% for o in ns.overrides %}
+{% set match = 'instance="' ~ o.instance ~ '",mountpoint="' ~ o.mountpoint ~ '"' %}
+
+  - name: disk-{{ o.instance }}-{{ (o.mountpoint | regex_replace('[^A-Za-z0-9]+', '-')).strip('-') or 'root' }}
+    rules:
+{{ disk_rules('{' ~ match ~ '}', '{' ~ fs ~ ',' ~ match ~ '}', o.warn, o.urgent, '') }}
+{% endfor %}

@@ -30,6 +30,8 @@
   ansible.builtin.file:
     path: "{{ vmalert_rules_dir }}"
     state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
     mode: '0755'
 
 - name: install watchdog rule

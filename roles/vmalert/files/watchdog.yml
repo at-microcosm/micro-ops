@@ -1,0 +1,11 @@
+# Managed by Ansible (roles/vmalert)
+groups:
+  - name: meta
+    rules:
+      # watchdog constantly fires for healthchecks.io connectivity alert
+      - alert: Watchdog
+        expr: vector(1)
+        labels:
+          severity: none
+        annotations:
+          summary: cozy monitor checkin

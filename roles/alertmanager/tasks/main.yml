@@ -1,0 +1,78 @@
+---
+# alertmanager: routes alerts (from vmalert) to email + discord, and pings
+# healthchecks.io for vmalert's always-firing Watchdog (dead man's switch).
+#
+# installed from the upstream release tarball. config holds secrets
+# (secrets.yml), so it's only readable by root + the alertmanager user.
+
+- name: make sure we have alerting secrets
+  ansible.builtin.assert:
+    that:
+      - alerts_smtp_host | default('') | length > 0
+      - alerts_smtp_port | default('') | string | length > 0
+      - alerts_smtp_username | default('') | length > 0
+      - alerts_smtp_password | default('') | length > 0
+      - alerts_smtp_from | default('') | length > 0
+      - alerts_smtp_to | default('') | length > 0
+      - alerts_webhook_discord | default('') | length > 0
+      - healthchecks_ping_key | default('') | length > 0
+    fail_msg: "alertmanager needs the alerts_* + healthchecks secrets (and `-e @secrets.yml`)"
+    quiet: true
+
+- name: create alertmanager user
+  ansible.builtin.user:
+    name: alertmanager
+    shell: /usr/sbin/nologin
+    create_home: false
+    system: true
+
+- name: download alertmanager {{ alertmanager_version }}
+  ansible.builtin.unarchive:
+    src: "https://github.com/prometheus/alertmanager/releases/download/v{{ alertmanager_version }}/alertmanager-{{ alertmanager_version }}.linux-{{ alertmanager_arch }}.tar.gz"
+    dest: /opt/
+    remote_src: true
+    creates: "/opt/alertmanager-{{ alertmanager_version }}.linux-{{ alertmanager_arch }}"
+
+- name: install alertmanager binaries
+  ansible.builtin.copy:
+    src: "/opt/alertmanager-{{ alertmanager_version }}.linux-{{ alertmanager_arch }}/{{ item }}"
+    dest: "/usr/local/bin/{{ item }}"
+    mode: '0755'
+    remote_src: true
+  loop:
+    - alertmanager
+    - amtool
+  notify: restart alertmanager
+
+- name: create alertmanager config dir
+  ansible.builtin.file:
+    path: /etc/alertmanager
+    state: directory
+    owner: root
+    group: alertmanager
+    mode: '0750'
+
+- name: install alertmanager config
+  ansible.builtin.template:
+    src: alertmanager.yml.j2
+    dest: /etc/alertmanager/alertmanager.yml
+    owner: root
+    group: alertmanager
+    mode: '0640'
+    validate: /usr/local/bin/amtool check-config %s
+  diff: false # contains secrets
+  notify: restart alertmanager
+
+- name: install alertmanager systemd unit
+  ansible.builtin.template:
+    src: alertmanager.service.j2
+    dest: /etc/systemd/system/alertmanager.service
+    mode: '0644'
+  notify: restart alertmanager
+
+- name: enable and start alertmanager
+  ansible.builtin.systemd_service:
+    name: alertmanager
+    enabled: true
+    state: started
+    daemon_reload: true

@@ -1,0 +1,24 @@
+# Managed by Ansible (roles/vmalert)
+[Unit]
+Description=vmalert: alerting rules against victoriametrics
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+DynamicUser=yes
+# remoteWrite/remoteRead: alert state writes to victoriametrics and restores
+# from it on restart. (-rule globs expanded by vmalert not systemd.)
+ExecStart=/usr/local/bin/vmalert-prod \
+    -rule={{ vmalert_rules_dir }}/*.yml \
+    -configCheckInterval=1m \
+    -datasource.url={{ vmalert_datasource_url }} \
+    -remoteWrite.url={{ vmalert_datasource_url }} \
+    -remoteRead.url={{ vmalert_datasource_url }} \
+    -notifier.url=http://{{ alertmanager_listen }} \
+    -httpListenAddr={{ vmalert_listen }} \
+    -external.url=http://{{ vmalert_listen }}
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

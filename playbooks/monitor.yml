@@ -1,10 +1,12 @@
 ---
-# the monitor host itself is mostly manual except node_exporter
+# the monitor host itself is semi-manual
 #
-# run with --ask-become-pass
+# run with --ask-become-pass -e @secrets.yml
 - name: Monitor host
   hosts: monitor
   become: true
   roles:
     - nonlocal_bind # make stuff available on tailnet (which exists post-boot)
     - node_exporter
+    - alertmanager
+    - vmalert

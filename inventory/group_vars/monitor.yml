@@ -1,7 +1,25 @@
 ---
-# (victoriametrics also scrapes itself at -selfScrapeInterval)
+# vmalert rules and recording on victoriametrics.
+# from vmutils at local victoriametrics version.
+vmalert_version: v1.153.0 # match to victoriametrics
+vmalert_arch: amd64
+vmalert_listen: "{{ tailscale_ip }}:8880" # ui + metrics
+vmalert_datasource_url: http://127.0.0.1:8428 # victoriametrics on this host
+vmalert_rules_dir: /etc/vmalert/rules
+
+# deliver vmalert notifications
+alertmanager_version: "0.34.1"
+alertmanager_arch: amd64
+alertmanager_listen: "{{ tailscale_ip }}:9093" # ui (silences) + metrics
+# always-alerting ping to healtchecks.io for cozy connectivity
+alertmanager_watchdog_slug: alerting-watchdog
+
 scrape_targets:
   - job: host
     port: "{{ node_exporter_port }}"
     labels:
       role: monitor
+  - job: vmalert
+    port: 8880
+  - job: alertmanager
+    port: 9093

@@ -1,0 +1,54 @@
+---
+# vmalert queries victoriametrics and sends to alertmanager
+#
+# (alert state writes back to victoriametrics)
+#
+# rule files in `vmalert_rules_dir` are re-read by vmalert itself
+
+- name: create vmutils {{ vmalert_version }} dir
+  ansible.builtin.file:
+    path: "/opt/vmutils-{{ vmalert_version }}"
+    state: directory
+    mode: '0755'
+
+- name: download vmutils {{ vmalert_version }}
+  ansible.builtin.unarchive:
+    src: "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/{{ vmalert_version }}/vmutils-linux-{{ vmalert_arch }}-{{ vmalert_version }}.tar.gz"
+    dest: "/opt/vmutils-{{ vmalert_version }}"
+    remote_src: true
+    creates: "/opt/vmutils-{{ vmalert_version }}/vmalert-prod"
+
+- name: install vmalert binary
+  ansible.builtin.copy:
+    src: "/opt/vmutils-{{ vmalert_version }}/vmalert-prod"
+    dest: /usr/local/bin/vmalert-prod
+    mode: '0755'
+    remote_src: true
+  notify: restart vmalert
+
+- name: create rules dir
+  ansible.builtin.file:
+    path: "{{ vmalert_rules_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: install watchdog rule
+  ansible.builtin.copy:
+    src: watchdog.yml
+    dest: "{{ vmalert_rules_dir }}/watchdog.yml"
+    mode: '0644'
+    validate: /usr/local/bin/vmalert-prod -dryRun -rule=%s
+
+- name: install vmalert systemd unit
+  ansible.builtin.template:
+    src: vmalert.service.j2
+    dest: /etc/systemd/system/vmalert.service
+    mode: '0644'
+  notify: restart vmalert
+
+- name: enable and start vmalert
+  ansible.builtin.systemd_service:
+    name: vmalert
+    enabled: true
+    state: started
+    daemon_reload: true

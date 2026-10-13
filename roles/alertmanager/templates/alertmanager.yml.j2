@@ -1,0 +1,36 @@
+# Managed by Ansible (roles/alertmanager)
+global:
+  smtp_smarthost: {{ (alerts_smtp_host ~ ':' ~ alerts_smtp_port) | to_json }}
+  smtp_from: {{ alerts_smtp_from | to_json }}
+  smtp_auth_username: {{ alerts_smtp_username | to_json }}
+  smtp_auth_password: {{ alerts_smtp_password | to_json }}
+  smtp_require_tls: true # STARTTLS
+
+route:
+  receiver: everyone
+  group_by: [alertname, instance]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 12h
+  routes:
+    # watchdog constantly emits for healthchecks.io connectivity alert
+    - receiver: watchdog
+      matchers:
+        - alertname = "Watchdog"
+      group_wait: 0s
+      group_interval: 1m
+      repeat_interval: 1m
+
+receivers:
+  - name: everyone
+    email_configs:
+      - to: {{ alerts_smtp_to | to_json }}
+        send_resolved: true
+    discord_configs:
+      - webhook_url: {{ alerts_webhook_discord | to_json }}
+        send_resolved: true
+
+  - name: watchdog
+    webhook_configs:
+      - url: {{ ('https://hc-ping.com/' ~ healthchecks_ping_key ~ '/' ~ alertmanager_watchdog_slug ~ '?create=1') | to_json }}
+        send_resolved: false

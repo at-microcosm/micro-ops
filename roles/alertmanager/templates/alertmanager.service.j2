@@ -1,0 +1,22 @@
+# Managed by Ansible (roles/alertmanager)
+[Unit]
+Description=Alertmanager
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=alertmanager
+Group=alertmanager
+StateDirectory=alertmanager
+# empty cluster address (single instance)
+ExecStart=/usr/local/bin/alertmanager \
+    --config.file=/etc/alertmanager/alertmanager.yml \
+    --storage.path=/var/lib/alertmanager \
+    --web.listen-address={{ alertmanager_listen }} \
+    --web.external-url=http://{{ alertmanager_listen }} \
+    --cluster.listen-address=
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,5 +1,5 @@
 ---
-ansible_host: plcrep-serv-01
-tailscale_ip: 100.120.137.126
+ansible_host: plcrep-serv-02
+tailscale_ip: 100.113.26.98
 public_ipv4: 154.12.118.56
 public_ipv6: <TODO> # waiting on servarica to set up

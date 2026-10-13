@@ -22,8 +22,7 @@ go_arch: linux-amd64
 
 plc_data_dir: /var/lib/plc
 
-# note: mode=rw won't create a db (rwc for full backfill / new db)
-plc_db_url: "sqlite://{{ plc_data_dir }}/db.sqlite?mode=rw&cache=shared&_journal_mode=WAL"
+plc_db_url: "sqlite://{{ plc_data_dir }}/db.sqlite?_journal_mode=WAL"
 
 plc_replica_port: 6781
 plc_bind: "127.0.0.1:{{ plc_replica_port }}"

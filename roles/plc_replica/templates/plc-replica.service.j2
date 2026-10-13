@@ -5,6 +5,8 @@ Wants=network-online.target
 After=network-online.target
 # keep retrying forever
 StartLimitIntervalSec=0
+# don't start without a db in place (assumes you'll grab a recent snapshot)
+ConditionPathExists={{ plc_data_dir }}/db.sqlite
 
 [Service]
 User={{ plc_user }}

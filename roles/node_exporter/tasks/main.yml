@@ -1,5 +1,4 @@
 ---
-# (ported from eurosky-ops; versions/listen come from group_vars/all.yml)
 
 - name: create node_exporter user
   ansible.builtin.user:

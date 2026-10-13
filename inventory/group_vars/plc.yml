@@ -1,0 +1,59 @@
+---
+plc_public_host: plc.microcosm.network
+
+# 301s
+plc_redirect_hosts:
+  - plc.wtf
+  - eu.plc.wtf
+  - us-west.plc.wtf
+  - experimental.plc.wtf
+  - experimental.eu.plc.wtf
+  - experimental.us-west.plc.wtf
+
+plc_user: plc
+plc_home: /home/plc
+
+plc_repo: https://github.com/did-method-plc/go-didplc.git
+plc_version: 9833fa2c645d26b0200d3cfb60a529c85be47fac
+
+# match go.mod
+go_version: "1.26.1"
+go_arch: linux-amd64
+
+plc_data_dir: /var/lib/plc
+
+# note: mode=rw won't create a db (rwc for full backfill / new db)
+plc_db_url: "sqlite://{{ plc_data_dir }}/db.sqlite?mode=rw&cache=shared&_journal_mode=WAL"
+
+plc_replica_port: 6781
+plc_bind: "127.0.0.1:{{ plc_replica_port }}"
+plc_metrics_port: 9464
+plc_metrics_addr: "{{ tailscale_ip }}:{{ plc_metrics_port }}"
+
+# nginx limits, ipv4 or v6/64 for now
+plc_ip_rate: 3000
+plc_ip_burst: 9000
+
+# freshness check (roles/plc_health): fail when the last committed op is older
+# than this many seconds. on_calendar is a systemd OnCalendar= value; match the
+# healthchecks.io check's period to it.
+
+# fail checks when latest op is older than this many seconds
+# (doesn't distinguish between actual plc write gaps or upstream issues etc)
+plc_health_max_lag: 45
+plc_health_on_calendar: "*:0/15" # check every 15min
+
+# for $request_time (`nginx_http_response_time_seconds_hist`)
+nginxlog_exporter_histogram_buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 3, 5, 8, 10, 30, 60]
+
+scrape_targets:
+  - job: host
+    port: "{{ node_exporter_port }}"
+    labels:
+      role: plc
+  - job: plc-replica
+    port: "{{ plc_metrics_port }}"
+  - job: nginx
+    port: "{{ nginxlog_exporter_port }}"
+    labels:
+      role: plc

@@ -9,13 +9,14 @@
 proxy_hide_header 'Access-Control-Allow-Origin';
 proxy_hide_header 'Access-Control-Allow-Methods';
 proxy_hide_header 'Access-Control-Allow-Headers';
+proxy_hide_header 'Access-Control-Expose-Headers';
+proxy_hide_header 'Access-Control-Max-Age';
 
 # ...and apply a very permissive policy
 add_header 'Access-Control-Allow-Origin' '*' always;
 add_header 'Access-Control-Allow-Methods' '*' always;
 add_header 'Access-Control-Allow-Headers' '*' always; # nb: does not include Authorization
-
-add_header 'Access-Control-Max-Age' 86400; # bit longer
-add_header 'Access-Control-Expose-Headers' '*'; # let JS apps read everything
+add_header 'Access-Control-Expose-Headers' '*' always; # let JS apps read everything
+add_header 'Access-Control-Max-Age' 86400 always; # bit longer
 
 if ($request_method = OPTIONS) { return 204; }

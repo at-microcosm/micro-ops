@@ -1,0 +1,21 @@
+# Managed by Ansible (roles/plc_replica)
+[Unit]
+Description=PLC read replica (did-method-plc/go-didplc)
+Wants=network-online.target
+After=network-online.target
+# keep retrying forever
+StartLimitIntervalSec=0
+
+[Service]
+User={{ plc_user }}
+Group={{ plc_user }}
+Type=simple
+EnvironmentFile={{ plc_home }}/plc-replica.env
+WorkingDirectory={{ plc_home }}
+ExecStart={{ plc_home }}/bin/plc-replica
+LimitNOFILE=1048576
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

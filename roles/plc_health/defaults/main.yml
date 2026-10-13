@@ -1,0 +1,6 @@
+---
+plc_health_url: "http://{{ plc_bind }}/_health"
+
+# per-host checks (created on first ping)
+plc_health_ping_key: "{{ healthchecks_ping_key | default('') }}" # secrets.yml
+plc_health_slug: "plc-health-{{ inventory_hostname }}"

@@ -1,0 +1,54 @@
+---
+# periodic self-check + healthchecks.io ping
+#
+# params (group_vars):
+#   - plc_health_max_lag: seconds
+#   - plc_health_on_calendar: systemd OnCalendar= value
+
+- name: make sure we have a healthchecks ping key
+  ansible.builtin.assert:
+    that: plc_health_ping_key | length > 0
+    fail_msg: "plc_health needs healthchecks_ping_key (and `-e @secrets.yml`)"
+    quiet: true
+
+- name: "deps"
+  ansible.builtin.apt:
+    name:
+      - curl
+      - jq
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: install check script
+  ansible.builtin.copy:
+    src: plc-health.sh
+    dest: /usr/local/bin/plc-health
+    mode: '0755'
+
+- name: install check config
+  ansible.builtin.template:
+    src: plc-health.env.j2
+    dest: /etc/plc-health.env
+    mode: '0600'
+  diff: false # contains ping key
+
+- name: install systemd service
+  ansible.builtin.copy:
+    src: plc-health.service
+    dest: /etc/systemd/system/plc-health.service
+    mode: '0644'
+  register: plc_health_service
+
+- name: install systemd timer
+  ansible.builtin.template:
+    src: plc-health.timer.j2
+    dest: /etc/systemd/system/plc-health.timer
+    mode: '0644'
+  register: plc_health_timer
+
+- name: enable freshness check
+  ansible.builtin.systemd_service:
+    name: plc-health.timer
+    enabled: true
+    state: "{{ 'restarted' if plc_health_timer.changed else 'started' }}"
+    daemon_reload: "{{ plc_health_service.changed or plc_health_timer.changed }}"

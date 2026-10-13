@@ -1,0 +1,9 @@
+# Managed by Ansible (roles/plc_health)
+[Unit]
+Description=plc-replica freshness check
+
+[Timer]
+OnCalendar={{ plc_health_on_calendar }}
+
+[Install]
+WantedBy=timers.target

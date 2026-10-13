@@ -1,0 +1,19 @@
+# Managed by Ansible (roles/plc_proxy)
+server {
+    server_name {{ name }};
+    include snippets/tls-{{ name }}.conf;
+    include snippets/acme.conf;
+
+    # preflights can't follow redirects so answer them directly
+    include snippets/cors.conf;
+
+    # per-name for visibility into clients migrating over
+    access_log /var/log/nginx/{{ name }}-access.log exporter;
+    error_log /var/log/nginx/{{ name }}-error.log;
+
+    keepalive_timeout 5s; # we just redirect them away
+
+    location / {
+        return 301 https://{{ plc_public_host }}$request_uri;
+    }
+}

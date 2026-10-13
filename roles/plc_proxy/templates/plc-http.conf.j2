@@ -1,0 +1,4 @@
+# Managed by Ansible (roles/plc_proxy): http-level plc config.
+
+# per-ip limit, keyed like cozy_ip_limit (v4 address or v6 /64)
+limit_req_zone $cozy_client_ip zone=plc_ip_limit:10m rate={{ plc_ip_rate }};

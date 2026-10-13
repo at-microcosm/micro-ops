@@ -1,0 +1,45 @@
+---
+# tls for plc -> plc_bind. per-ip rate limit + cors.
+#
+# run after roles/nginx
+
+- name: install plc http config
+  ansible.builtin.template:
+    src: plc-http.conf.j2
+    dest: /etc/nginx/conf.d/plc.conf
+  notify: reload nginx
+
+- name: install plc site
+  ansible.builtin.template:
+    src: plc.conf.j2
+    dest: "/etc/nginx/sites-available/{{ plc_public_host }}"
+  when: plc_public_host in nginx_live_names
+  notify: reload nginx
+
+- name: enable plc site
+  ansible.builtin.file:
+    src: "/etc/nginx/sites-available/{{ plc_public_host }}"
+    dest: "/etc/nginx/sites-enabled/{{ plc_public_host }}"
+    state: link
+  when: plc_public_host in nginx_live_names
+  notify: reload nginx
+
+# 301 to plc_public_host
+- name: install redirect sites
+  ansible.builtin.template:
+    src: plc-redirect.conf.j2
+    dest: "/etc/nginx/sites-available/{{ name }}"
+  loop: "{{ plc_redirect_hosts | select('in', nginx_live_names) | list }}"
+  loop_control:
+    loop_var: name
+  notify: reload nginx
+
+- name: enable redirect sites
+  ansible.builtin.file:
+    src: "/etc/nginx/sites-available/{{ name }}"
+    dest: "/etc/nginx/sites-enabled/{{ name }}"
+    state: link
+  loop: "{{ plc_redirect_hosts | select('in', nginx_live_names) | list }}"
+  loop_control:
+    loop_var: name
+  notify: reload nginx

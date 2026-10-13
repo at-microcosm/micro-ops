@@ -1,0 +1,76 @@
+---
+
+- name: "deps"
+  ansible.builtin.apt:
+    name:
+      - build-essential # cgo, for sqlite
+      - git
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: create plc user
+  ansible.builtin.user:
+    name: "{{ plc_user }}"
+    home: "{{ plc_home }}"
+    shell: /bin/bash
+    create_home: true
+
+- name: create plc data dir
+  ansible.builtin.file:
+    path: "{{ plc_data_dir }}"
+    state: directory
+    owner: "{{ plc_user }}"
+    group: "{{ plc_user }}"
+    mode: '0750'
+
+- name: clone/update go-didplc
+  become: true
+  become_user: "{{ plc_user }}"
+  ansible.builtin.git:
+    repo: "{{ plc_repo }}"
+    dest: "{{ plc_home }}/go-didplc"
+    version: "{{ plc_version }}"
+  register: plc_repo_co
+
+- name: check for a built plc-replica
+  ansible.builtin.stat:
+    path: "{{ plc_home }}/bin/plc-replica"
+  register: plc_binary
+
+- name: build plc-replica
+  become: true
+  become_user: "{{ plc_user }}"
+  ansible.builtin.command:
+    cmd: /usr/local/go/bin/go build -o {{ plc_home }}/bin/plc-replica -buildvcs=false ./cmd/plc-replica
+    chdir: "{{ plc_home }}/go-didplc"
+  environment:
+    GOTOOLCHAIN: local # use our toolchain or fail. update go_version when go.mod updates
+    CGO_ENABLED: "1"   # for sqlite (mattn/go-sqlite3)
+    HOME: "{{ plc_home }}"
+    GOPATH: "{{ plc_home }}/go"
+    GOCACHE: "{{ plc_home }}/.cache/go-build"
+  when: plc_repo_co.changed or not plc_binary.stat.exists or force_build is defined
+  notify: restart plc-replica
+
+- name: install plc-replica environment file
+  ansible.builtin.template:
+    src: plc-replica.env.j2
+    dest: "{{ plc_home }}/plc-replica.env"
+    owner: "{{ plc_user }}"
+    group: "{{ plc_user }}"
+    mode: '0640'
+  notify: restart plc-replica
+
+- name: install plc-replica systemd unit
+  ansible.builtin.template:
+    src: plc-replica.service.j2
+    dest: /etc/systemd/system/plc-replica.service
+    mode: '0644'
+  notify: restart plc-replica
+
+- name: enable and start plc-replica
+  ansible.builtin.systemd_service:
+    name: plc-replica
+    state: started
+    enabled: true
+    daemon_reload: true

@@ -1,0 +1,34 @@
+---
+# go from go.dev, sets up / overwrites /usr/local/go
+#
+# params:
+#   - go_version: eg "1.26.1"
+#   - go_arch: eg linux-amd64
+
+- name: check installed go version
+  ansible.builtin.command: /usr/local/go/bin/go version
+  register: go_installed
+  changed_when: false
+  failed_when: false
+  check_mode: false # read-only, and later tasks need the answer
+
+# trailing space on `when` stops go1.26.1 from matching go1.26.10
+- name: install go {{ go_version }}
+  when: ("go" ~ go_version ~ " ") not in go_installed.stdout
+  block:
+    - name: remove existing go toolchain
+      ansible.builtin.file:
+        path: /usr/local/go
+        state: absent
+
+    - name: download and extract go {{ go_version }}
+      ansible.builtin.unarchive:
+        src: "https://go.dev/dl/go{{ go_version }}.{{ go_arch }}.tar.gz"
+        dest: /usr/local
+        remote_src: true
+
+- name: put go on PATH for login shells
+  ansible.builtin.copy:
+    dest: /etc/profile.d/go.sh
+    content: "export PATH=$PATH:/usr/local/go/bin\n"
+    mode: '0644'

@@ -6,5 +6,5 @@
   hosts: monitor
   become: true
   roles:
-    - nonlocal_bind # node_exporter binds tailnet ip
+    - nonlocal_bind # make stuff available on tailnet (which exists post-boot)
     - node_exporter

@@ -1,0 +1,11 @@
+# Managed by Ansible (roles/plc_health)
+[Unit]
+Description=check plc-replica freshness, report to healthchecks.io
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/plc-health.env
+ExecStart=/usr/local/bin/plc-health
+DynamicUser=yes

@@ -1,0 +1,18 @@
+---
+- name: Deploy plc replica
+  hosts: plc
+  become: true
+  roles:
+    - nonlocal_bind # make stuff available on tailnet (which exists post-boot)
+    - node_exporter
+    - go_toolchain
+    - plc_replica
+    - role: nginx
+      nginx_names: "{{ [plc_public_host] + plc_redirect_hosts }}"
+    - plc_proxy
+    - role: nginxlog_exporter
+      nginxlog_exporter_logs: "{{ ['plc'] + plc_redirect_hosts }}"
+      nginxlog_exporter_format: "{{ nginx_log_format }}"
+    - role: cert_check
+      cert_check_names: "{{ [plc_public_host] + plc_redirect_hosts }}"
+    - plc_health

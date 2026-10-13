@@ -1,0 +1,25 @@
+# Managed by Ansible (roles/plc_proxy)
+upstream plc_replica {
+    server {{ plc_bind }};
+    keepalive 16;
+}
+
+server {
+    server_name {{ plc_public_host }};
+    include snippets/tls-{{ plc_public_host }}.conf;
+    include snippets/acme.conf;
+
+    include snippets/cors.conf;
+
+    access_log /var/log/nginx/plc-access.log exporter;
+    error_log /var/log/nginx/plc-error.log;
+
+    limit_req zone=plc_ip_limit burst={{ plc_ip_burst }} nodelay;
+    limit_req_status 429;
+
+    location / {
+        proxy_pass http://plc_replica;
+        include snippets/proxy.conf;
+        proxy_set_header Connection ""; # upstream keepalive
+    }
+}

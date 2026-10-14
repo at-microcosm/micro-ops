@@ -1,0 +1,7 @@
+# Managed by Ansible (roles/os_updates)
+[Unit]
+Description=apt metrics for node_exporter
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c '/usr/local/bin/apt_info.py > {{ node_exporter_textfile_dir }}/apt.prom.tmp && mv {{ node_exporter_textfile_dir }}/apt.prom.tmp {{ node_exporter_textfile_dir }}/apt.prom'

@@ -236,6 +236,46 @@
         "overrides": []
       },
       "options": { "orientation": "horizontal", "displayMode": "basic", "showUnfilled": true, "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } }
+    },
+    {
+      "id": 13,
+      "type": "table",
+      "title": "reboot needed",
+      "description": "gateways should self-reboot",
+      "gridPos": { "x": 0, "y": 36, "w": 8, "h": 7 },
+      "datasource": { "type": "victoriametrics-metrics-datasource", "uid": "${datasource}" },
+      "targets": [
+        { "refId": "A", "expr": "node_reboot_required == 1", "instant": true, "range": false, "format": "table" }
+      ],
+      "transformations": [
+        { "id": "organize", "options": { "excludeByName": { "Time": true, "Value": true, "__name__": true, "job": true } } }
+      ],
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "options": { "showHeader": true }
+    },
+    {
+      "id": 14,
+      "type": "table",
+      "title": "upgrades waiting",
+      "description": "pending: should be only non-security upgrades. held: kept back by apt.",
+      "gridPos": { "x": 8, "y": 36, "w": 16, "h": 7 },
+      "datasource": { "type": "victoriametrics-metrics-datasource", "uid": "${datasource}" },
+      "targets": [
+        { "refId": "A", "expr": "sum by (instance) (apt_upgrades_pending) > 0", "instant": true, "range": false, "format": "table" },
+        { "refId": "B", "expr": "sum by (instance) (apt_upgrades_held) > 0", "instant": true, "range": false, "format": "table" }
+      ],
+      "transformations": [
+        { "id": "merge", "options": {} },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "Time": true },
+            "renameByName": { "Value #A": "pending", "Value #B": "held" }
+          }
+        }
+      ],
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "options": { "showHeader": true }
     }
   ]
 }

@@ -13,3 +13,8 @@
 - name: node_exporter
   ansible.builtin.import_role:
     name: node_exporter
+
+# after node_exporter for textfile dir
+- name: os updates
+  ansible.builtin.import_role:
+    name: os_updates

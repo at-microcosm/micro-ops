@@ -1,0 +1,75 @@
+---
+# unattended upgrades (ubuntu security updates) and unused kernels/deps cleanup
+#
+# metrics from prometheus-community's apt_info.py (pending/held, reboot needed).
+
+- name: make sure auto-reboot hosts have a reboot time
+  ansible.builtin.assert:
+    that: not os_updates_auto_reboot or (os_updates_reboot_time | default('') | length > 0)
+    fail_msg: "{{ inventory_hostname }} has os_updates_auto_reboot but no os_updates_reboot_time"
+    quiet: true
+
+- name: "deps"
+  ansible.builtin.apt:
+    name:
+      - unattended-upgrades
+      - python3-apt # apt_info.py
+      - python3-prometheus-client # apt_info.py
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: run apt updates + unattended upgrades daily
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      // Managed by Ansible (roles/os_updates)
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+      APT::Periodic::AutocleanInterval "7";
+    mode: '0644'
+
+- name: unattended upgrades policy
+  ansible.builtin.template:
+    src: 52micro-ops-unattended-upgrades.j2
+    dest: /etc/apt/apt.conf.d/52micro-ops-unattended-upgrades
+    mode: '0644'
+
+- name: create apt_info.py dir
+  ansible.builtin.file:
+    path: /usr/local/lib/apt_info
+    state: directory
+    mode: '0755'
+
+# only downloads when ref changes
+- name: download apt_info.py ({{ os_updates_apt_info_ref }})
+  ansible.builtin.get_url:
+    url: "https://raw.githubusercontent.com/prometheus-community/node-exporter-textfile-collector-scripts/{{ os_updates_apt_info_ref }}/apt_info.py"
+    dest: "/usr/local/lib/apt_info/apt_info-{{ os_updates_apt_info_ref }}.py"
+    mode: '0755'
+
+- name: link apt_info.py
+  ansible.builtin.file:
+    src: "/usr/local/lib/apt_info/apt_info-{{ os_updates_apt_info_ref }}.py"
+    dest: /usr/local/bin/apt_info.py
+    state: link
+
+- name: install apt metrics service
+  ansible.builtin.template:
+    src: apt-metrics.service.j2
+    dest: /etc/systemd/system/apt-metrics.service
+    mode: '0644'
+  notify: restart apt-metrics timer
+
+- name: install apt metrics timer
+  ansible.builtin.copy:
+    src: apt-metrics.timer
+    dest: /etc/systemd/system/apt-metrics.timer
+    mode: '0644'
+  notify: restart apt-metrics timer
+
+- name: enable apt metrics
+  ansible.builtin.systemd_service:
+    name: apt-metrics.timer
+    enabled: true
+    state: started
+    daemon_reload: true

@@ -1,0 +1,12 @@
+# Managed by Ansible (roles/os_updates)
+[Unit]
+Description=apt metrics for node_exporter
+
+[Timer]
+OnCalendar=hourly
+RandomizedDelaySec=5m
+# also right after boot, so a cleared reboot-required shows up quickly
+OnBootSec=2m
+
+[Install]
+WantedBy=timers.target

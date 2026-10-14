@@ -8,6 +8,11 @@ node_exporter_arch: linux-amd64 # override in host_vars for hosts on others
 
 node_exporter_port: 9100
 node_exporter_listen: "{{ tailscale_ip }}:{{ node_exporter_port }}"
+node_exporter_textfile_dir: /var/lib/node_exporter/textfile
+
+# prometheus-community/node-exporter-textfile-collector-scripts, for apt_info.py
+os_updates_apt_info_ref: 642e365cd4e99a1f5cfe9b6b1756cfc27da066b8
+os_updates_auto_reboot: false
 
 nginxlog_exporter_version: "1.11.0"
 nginxlog_exporter_arch: linux_amd64

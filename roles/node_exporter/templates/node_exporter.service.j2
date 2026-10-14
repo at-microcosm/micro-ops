@@ -8,9 +8,11 @@ User=node_exporter
 Group=node_exporter
 Type=simple
 # systemd collector: unit states, for failed-unit alerts
+# textfile collector: *.prom files written usually on timers
 ExecStart=/usr/local/bin/node_exporter \
     --web.listen-address={{ node_exporter_listen }} \
-    --collector.systemd
+    --collector.systemd \
+    --collector.textfile.directory={{ node_exporter_textfile_dir }}
 Restart=always
 RestartSec=3
 

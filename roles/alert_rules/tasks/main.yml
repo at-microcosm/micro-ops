@@ -39,6 +39,13 @@
     mode: '0644'
     validate: /usr/local/bin/vmalert-prod -dryRun -rule=%s
 
+- name: write os updates rules
+  ansible.builtin.copy:
+    src: generated-updates.yml
+    dest: "{{ vmalert_rules_dir }}/generated-updates.yml"
+    mode: '0644'
+    validate: /usr/local/bin/vmalert-prod -dryRun -rule=%s
+
 - name: find generated rule files
   ansible.builtin.find:
     paths: "{{ vmalert_rules_dir }}"
@@ -52,4 +59,4 @@
   loop: "{{ alert_rules_found.files }}"
   loop_control:
     label: "{{ item.path | basename }}"
-  when: item.path | basename not in ['generated-disk.yml', 'generated-systemd.yml']
+  when: item.path | basename not in ['generated-disk.yml', 'generated-systemd.yml', 'generated-updates.yml']

@@ -1,0 +1,11 @@
+# Managed by Ansible (roles/alert_rules)
+groups:
+  - name: updates
+    rules:
+      - alert: RebootPending
+        expr: node_reboot_required == 1
+        for: 1d
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.instance }}: reboot needed"

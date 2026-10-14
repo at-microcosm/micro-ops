@@ -22,6 +22,12 @@
     remote_src: true
   notify: restart node_exporter
 
+- name: create textfile collector dir
+  ansible.builtin.file:
+    path: "{{ node_exporter_textfile_dir }}"
+    state: directory
+    mode: '0755'
+
 - name: install node_exporter systemd unit
   ansible.builtin.template:
     src: node_exporter.service.j2

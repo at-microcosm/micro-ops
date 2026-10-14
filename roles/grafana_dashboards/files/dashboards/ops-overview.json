@@ -182,7 +182,6 @@
       "id": 10,
       "type": "bargauge",
       "title": "days until full (last 6h rate)",
-      "description": "only filesystems that are filling. a rough trend, not a promise.",
       "gridPos": { "x": 16, "y": 18, "w": 8, "h": 9 },
       "datasource": { "type": "victoriametrics-metrics-datasource", "uid": "${datasource}" },
       "targets": [

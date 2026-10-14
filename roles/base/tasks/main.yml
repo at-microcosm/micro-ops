@@ -1,0 +1,15 @@
+---
+# normal host stuff
+
+- name: ssh
+  ansible.builtin.import_role:
+    name: ssh
+
+# make stuff available on tailnet (which exists post-boot)
+- name: nonlocal bind
+  ansible.builtin.import_role:
+    name: nonlocal_bind
+
+- name: node_exporter
+  ansible.builtin.import_role:
+    name: node_exporter

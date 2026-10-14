@@ -3,8 +3,7 @@
   hosts: plc
   become: true
   roles:
-    - nonlocal_bind # make stuff available on tailnet (which exists post-boot)
-    - node_exporter
+    - base
     - go_toolchain
     - plc_replica
     - role: nginx

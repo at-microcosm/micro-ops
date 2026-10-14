@@ -6,8 +6,7 @@
   hosts: monitor
   become: true
   roles:
-    - nonlocal_bind # make stuff available on tailnet (which exists post-boot)
-    - node_exporter
+    - base
     - alertmanager
     - vmalert
     - grafana_provisioning

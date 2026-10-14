@@ -1,0 +1,35 @@
+---
+# configure ssh servers:
+# - key-only logins
+# - TODO: sync authorized keys
+#
+# sshd's config is first-value-wins, so `00-` overrides whatever else on host.
+# (the assertion makes sure this actually works)
+
+- name: key-only sshd
+  ansible.builtin.copy:
+    dest: /etc/ssh/sshd_config.d/00-no-password.conf
+    content: |
+      # Managed by Ansible (roles/ssh)
+      PermitRootLogin prohibit-password
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+    mode: '0644'
+  notify: reload ssh
+
+- name: read effective sshd settings
+  ansible.builtin.command: sshd -T
+  register: ssh_effective
+  changed_when: false
+  check_mode: false
+
+- name: make sure password logins are off
+  ansible.builtin.assert:
+    that:
+      - "'passwordauthentication no' in ssh_effective.stdout_lines"
+      - "'kbdinteractiveauthentication no' in ssh_effective.stdout_lines"
+      - "ssh_effective.stdout_lines | select('match', '^permitrootlogin (prohibit-password|without-password)$') | list | length == 1"
+    fail_msg: >-
+      sshd is allowing password logins! check in /etc/ssh/sshd_config.d/, or
+      above the `Include` line in /etc/ssh/sshd_config
+    quiet: true

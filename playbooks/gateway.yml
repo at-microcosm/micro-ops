@@ -4,8 +4,7 @@
   become: true
   serial: 1 # one at a time, so if something breaks we don't take both down
   roles:
-    - nonlocal_bind # make stuff available on tailnet (which exists post-boot)
-    - node_exporter
+    - base
     - role: nginx
       nginx_names: "{{ gateway_sites | map(attribute='name') | list }}"
       nginx_acme_peer_group: gateway

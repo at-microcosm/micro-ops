@@ -3,12 +3,11 @@
   hosts: hubble
   become: true
   roles:
-    - nonlocal_bind # make stuff available on tailnet (which exists post-boot)
+    - base
     - role: xfs_volume
       xfs_volume_device: "{{ hubble_storage_device }}"
       xfs_volume_mount: "{{ hubble_storage_mount }}"
       when: hubble_storage_device is defined
-    - node_exporter
     - hubble
     - role: nginx
       nginx_names:

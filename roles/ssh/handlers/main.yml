@@ -1,0 +1,11 @@
+---
+# handlers run in file order, so `sshd -t` happens before the reload
+- name: check sshd config
+  ansible.builtin.command: sshd -t
+  changed_when: false
+  listen: reload ssh
+
+- name: reload ssh
+  ansible.builtin.systemd_service:
+    name: ssh
+    state: reloaded

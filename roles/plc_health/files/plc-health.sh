@@ -40,4 +40,6 @@ if ! printf '%s\n' "$report" | curl -fsS -m 10 --retry 3 --data-binary @- -o /de
     exit 2
 fi
 
-exit "$failed"
+# script's own success is just whether it could report to healtchecks.io.
+# (systemd faild unit monitor finds error exits, avoid duplicate alerts)
+exit 0

@@ -2,6 +2,7 @@
 ansible_host: bridgy-hubble
 tailscale_ip: 100.123.160.95
 hubble_public_host: bridgy-hubble.microcosm.blue
+firewall_enabled: true
 
 # route in the bridgy auth token (secrets.yml)
 hubble_extra_env:

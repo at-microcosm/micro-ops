@@ -1,0 +1,79 @@
+---
+# inbound firewall (ufw): deny by default, allow the tailnet, rate-limited ssh,
+# and `firewall_public_tcp`.
+#
+# note: ufw module only ever adds rules
+
+- name: "deps"
+  ansible.builtin.apt:
+    name: ufw
+    update_cache: true
+    cache_valid_time: 3600
+
+# with IPV6=no, ufw leaves ip6tables alone: v6 would be wide open
+- name: firewall ipv6 too
+  ansible.builtin.lineinfile:
+    path: /etc/default/ufw
+    regexp: '^IPV6='
+    line: IPV6=yes
+  notify: reload ufw
+
+# ssh, metrics, ansible
+- name: allow everything from the tailnet
+  community.general.ufw:
+    rule: allow
+    direction: in
+    interface: tailscale0
+
+# tailscale peer-to-peer (avoid DERP)
+- name: allow tailscale direct connections
+  community.general.ufw:
+    rule: allow
+    port: "41641"
+    proto: udp
+
+# connections should be over tailscale usually
+- name: rate-limit public ssh
+  community.general.ufw:
+    rule: limit
+    port: "22"
+    proto: tcp
+
+- name: allow public ports
+  community.general.ufw:
+    rule: allow
+    port: "{{ item }}"
+    proto: tcp
+  loop: "{{ firewall_public_tcp }}"
+
+- name: deny incoming by default
+  community.general.ufw:
+    default: deny
+    direction: incoming
+
+# last, so every allow is in place first
+- name: enable ufw
+  community.general.ufw:
+    state: enabled
+
+- name: read ufw's rules
+  ansible.builtin.command: ufw show added
+  register: firewall_added
+  changed_when: false
+  check_mode: false
+
+- name: make sure ufw only has our rules
+  ansible.builtin.assert:
+    that: firewall_unexpected | length == 0
+    fail_msg: "extra ufw rules found: `sudo ufw delete ...`: {{ firewall_unexpected }}"
+    quiet: true
+  vars:
+    firewall_expected: |
+      - ufw allow in on tailscale0
+      - ufw allow 41641/udp
+      - ufw limit 22/tcp
+      {% for port in firewall_public_tcp %}
+      - ufw allow {{ port }}/tcp
+      {% endfor %}
+    # skip ufw's header line
+    firewall_unexpected: "{{ firewall_added.stdout_lines[1:] | reject('in', firewall_expected | from_yaml) | list }}"

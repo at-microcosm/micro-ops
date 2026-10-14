@@ -45,6 +45,8 @@ plc_health_on_calendar: "*:0/15" # check every 15min
 # for $request_time (`nginx_http_response_time_seconds_hist`)
 nginxlog_exporter_histogram_buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 3, 5, 8, 10, 30, 60]
 
+firewall_public_tcp: [80, 443]
+
 scrape_targets:
   - job: host
     port: "{{ node_exporter_port }}"

@@ -181,13 +181,13 @@
     {
       "id": 10,
       "type": "bargauge",
-      "title": "days until full (last 6h rate)",
+      "title": "days until full (last 24h rate)",
       "gridPos": { "x": 16, "y": 18, "w": 8, "h": 9 },
       "datasource": { "type": "victoriametrics-metrics-datasource", "uid": "${datasource}" },
       "targets": [
         {
           "refId": "A",
-          "expr": "bottomk(10, node_filesystem_avail_bytes{fstype!~\"tmpfs|ramfs|squashfs|overlay|efivarfs\"} / (-deriv(node_filesystem_avail_bytes{fstype!~\"tmpfs|ramfs|squashfs|overlay|efivarfs\"}[6h]) > 0) / 86400)",
+          "expr": "bottomk(10, node_filesystem_avail_bytes{fstype!~\"tmpfs|ramfs|squashfs|overlay|efivarfs\"} / (-deriv(node_filesystem_avail_bytes{fstype!~\"tmpfs|ramfs|squashfs|overlay|efivarfs\"}[24h]) > 0) / 86400)",
           "legendFormat": "{{instance}} {{mountpoint}}", "instant": true, "range": false
         }
       ],

@@ -1,0 +1,10 @@
+# Managed by Ansible (roles/static_ipv6). merged by interface id.
+network:
+  version: 2
+  ethernets:
+    {{ static_ipv6_netplan_id }}:
+      addresses:
+        - "{{ public_ipv6 }}/{{ public_ipv6_prefix_len }}"
+      routes:
+        - to: "::/0"
+          via: "{{ public_ipv6_gateway }}"

@@ -1,6 +1,7 @@
 ---
 ansible_host: hubble-serv-01
 tailscale_ip: 100.111.249.119
+firewall_enabled: true
 
 # not in dns for now
 hubble_public_host: hubble.microcosm.blue

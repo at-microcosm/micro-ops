@@ -5,6 +5,18 @@
   ansible.builtin.import_role:
     name: ssh
 
+# for public hosts
+- name: firewall
+  ansible.builtin.import_role:
+    name: firewall
+  when: firewall_enabled
+
+# for manual config (ie servarica after requesting ipv6 enabled)
+- name: static ipv6
+  ansible.builtin.import_role:
+    name: static_ipv6
+  when: static_ipv6_enabled
+
 # make stuff available on tailnet (which exists post-boot)
 - name: nonlocal bind
   ansible.builtin.import_role:

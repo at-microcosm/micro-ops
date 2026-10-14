@@ -24,3 +24,9 @@ disk_alert_urgent_free: 0.05 # current usage
 
 # shared for nginx / nginxlog_exporter (metrics)
 nginx_log_format: '$remote_addr - $remote_user [$time_local] "$request" $status $upstream_cache_status $body_bytes_sent "$http_referer" "$http_user_agent" $request_time'
+
+firewall_enabled: false
+firewall_public_tcp: []
+
+# for providers that make us set it up manually
+static_ipv6_enabled: false

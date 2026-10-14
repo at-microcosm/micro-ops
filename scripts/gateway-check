@@ -3,23 +3,23 @@
 #
 #   scripts/gateway-check                   # every host in the `gateway` group
 #   scripts/gateway-check gateway-lino-01   # just these
-#   scripts/gateway-check --no-v6           # from a network without ipv6
-#   scripts/gateway-check --from hubble-hetz-01  # run curl there (ssh)
+#   scripts/gateway-check --no-v6           # via a network without ipv6
+#   scripts/gateway-check --via hubble-hetz-01  # run curl there (ssh)
 #
 # ips come from host_vars `public_ipv4` / `public_ipv6`.
 #
 # extend CHECKS below when adding a site.
 #
-# needs: ansible-inventory, jq, curl (and ssh + curl on a --from host)
+# needs: ansible-inventory, jq, curl (and ssh + curl on a --via host)
 set -uo pipefail
 
 cd "$(dirname "$0")/.." || exit 1
 
-from=
+via=
 no_v6=
 while [ $# -gt 0 ]; do
   case $1 in
-    --from) from=${2:?--from needs a host}; shift 2 ;;
+    --via) via=${2:?--via needs a host}; shift 2 ;;
     --no-v6) no_v6=1; shift ;;
     -*) echo "unknown option: $1" >&2; exit 2 ;;
     *) break ;;
@@ -71,9 +71,9 @@ check() {
   args+=(--connect-timeout 5 --max-time "$max_time" "$url")
 
   local out rc got connects
-  if [ -n "$from" ]; then
+  if [ -n "$via" ]; then
     # shellcheck disable=SC2029 # expanding locally is the point: %q quotes each arg for the remote shell
-    out=$(ssh "${ssh_opts[@]}" "$from" "$(printf '%q ' curl "${args[@]}")")
+    out=$(ssh "${ssh_opts[@]}" "$via" "$(printf '%q ' curl "${args[@]}")")
   else
     out=$(curl "${args[@]}")
   fi
@@ -82,8 +82,8 @@ check() {
   connects=${out#* }
 
   # curl never exits 255, ssh does when it fails
-  if [ -n "$from" ] && [ "$rc" = 255 ]; then
-    printf 'FAIL  %-16s %s ssh to %s failed\n' "$host" "$family" "$from"
+  if [ -n "$via" ] && [ "$rc" = 255 ]; then
+    printf 'FAIL  %-16s %s ssh to %s failed\n' "$host" "$family" "$via"
     failed=1
     return
   fi
@@ -102,7 +102,7 @@ check() {
   fi
 }
 
-[ -n "$from" ] && echo "checking from $from"
+[ -n "$via" ] && echo "checking via $via"
 
 if [ $# -eq 0 ]; then
   # shellcheck disable=SC2046 # one hostname per word

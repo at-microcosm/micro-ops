@@ -1,0 +1,27 @@
+---
+# static ipv6 (servarica assigns address on request but doesn't configure it)
+#
+# doesn't actually apply it: run `netplan try` on the host manually after.
+
+- name: install ipv6 netplan config
+  ansible.builtin.template:
+    src: 60-micro-ops-ipv6.yaml.j2
+    dest: /etc/netplan/60-micro-ops-ipv6.yaml
+    mode: '0600' # netplan warns about readable configs
+
+# we apply between runs
+- name: refresh network facts
+  ansible.builtin.setup:
+    gather_subset:
+      - '!all'
+      - network
+
+- name: make sure ipv6 is live
+  ansible.builtin.assert:
+    that:
+      - public_ipv6 in ansible_all_ipv6_addresses
+      - ansible_default_ipv6.gateway | default('') == public_ipv6_gateway
+    fail_msg: >-
+      ipv6 isn't applied: check the merged config (`sudo netplan get ethernets`),
+      then `sudo netplan try`
+    quiet: true

@@ -11,23 +11,6 @@
     quiet: true
   loop: "{{ gateway_upstream_hosts }}"
 
-- name: "deps"
-  ansible.builtin.apt:
-    name:
-      - ufw # only so allowing web ports works
-    update_cache: true
-    cache_valid_time: 3600
-
-# these do nothing where ufw is inactive
-- name: allow http + https through ufw
-  community.general.ufw:
-    rule: allow
-    port: "{{ item }}"
-    proto: tcp
-  loop:
-    - "80"
-    - "443"
-
 - name: install gateway http config
   ansible.builtin.template:
     src: gateway.conf.j2

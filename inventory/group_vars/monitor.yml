@@ -14,6 +14,8 @@ alertmanager_listen: "{{ tailscale_ip }}:9093" # ui (silences) + metrics
 # always-alerting ping to healtchecks.io for cozy connectivity
 alertmanager_watchdog_slug: alerting-watchdog
 
+grafana_dashboards_dir: /var/lib/grafana/dashboards/micro-ops
+
 scrape_targets:
   - job: host
     port: "{{ node_exporter_port }}"

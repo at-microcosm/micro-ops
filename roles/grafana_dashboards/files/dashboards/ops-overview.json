@@ -1,0 +1,241 @@
+{
+  "uid": "micro-ops-overview",
+  "title": "ops overview",
+  "description": "High-level microcosm ops state. Edit in micro-ops",
+  "tags": ["micro-ops"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "refresh": "1m",
+  "time": { "from": "now-24h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "label": "datasource",
+        "type": "datasource",
+        "query": "victoriametrics-metrics-datasource",
+        "hide": 0
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "alerting pipeline",
+      "description": "always-alerting watchdog, when not ok, other alerts might be missing.",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+      "datasource": { "type": "victoriametrics-metrics-datasource", "uid": "${datasource}" },
+      "targets": [
+        { "refId": "A", "expr": "count(ALERTS{alertname=\"Watchdog\", alertstate=\"firing\"}) or vector(0)", "instant": true, "range": false }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "ok", "color": "green" } } }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "red", "value": null }, { "color": "green", "value": 1 } ] }
+        },
+        "overrides": []
+      },
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "firing alerts",
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+      "datasource": { "type": "victoriametrics-metrics-datasource", "uid": "${datasource}" },
+      "targets": [
+        { "refId": "A", "expr": "count(ALERTS{alertstate=\"firing\", alertname!=\"Watchdog\"}) or vector(0)", "instant": true, "range": false }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "red", "value": 1 } ] }
+        },
+        "overrides": []
+      },
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "targets down",
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+      "datasource": { "type": "victoriametrics-metrics-datasource", "uid": "${datasource}" },
+      "targets": [
+        { "refId": "A", "expr": "count(up == 0) or vector(0)", "instant": true, "range": false }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "orange", "value": 1 } ] }
+        },
+        "overrides": []
+      },
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "failed systemd units",
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
+      "datasource": { "type": "victoriametrics-metrics-datasource", "uid": "${datasource}" },
+      "targets": [
+        { "refId": "A", "expr": "count(node_systemd_unit_state{state=\"failed\"} == 1) or vector(0)", "instant": true, "range": false }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "orange", "value": 1 } ] }
+        },
+        "overrides": []
+      },
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } }
+    },
+    {
+      "id": 5,
+      "type": "table",
+      "title": "alerts (firing + pending)",
+      "gridPos": { "x": 0, "y": 4, "w": 24, "h": 8 },
+      "datasource": { "type": "victoriametrics-metrics-datasource", "uid": "${datasource}" },
+      "targets": [
+        { "refId": "A", "expr": "ALERTS{alertname!=\"Watchdog\"}", "instant": true, "range": false, "format": "table" }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "Time": true, "Value": true, "__name__": true },
+            "indexByName": { "alertstate": 0, "severity": 1, "alertname": 2, "instance": 3 }
+          }
+        }
+      ],
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "options": { "showHeader": true, "sortBy": [ { "displayName": "severity", "desc": true } ] }
+    },
+    {
+      "id": 6,
+      "type": "table",
+      "title": "targets down",
+      "gridPos": { "x": 0, "y": 12, "w": 12, "h": 6 },
+      "datasource": { "type": "victoriametrics-metrics-datasource", "uid": "${datasource}" },
+      "targets": [
+        { "refId": "A", "expr": "up == 0", "instant": true, "range": false, "format": "table" }
+      ],
+      "transformations": [
+        { "id": "organize", "options": { "excludeByName": { "Time": true, "Value": true, "__name__": true } } }
+      ],
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "options": { "showHeader": true }
+    },
+    {
+      "id": 7,
+      "type": "table",
+      "title": "failed systemd units",
+      "gridPos": { "x": 12, "y": 12, "w": 12, "h": 6 },
+      "datasource": { "type": "victoriametrics-metrics-datasource", "uid": "${datasource}" },
+      "targets": [
+        { "refId": "A", "expr": "node_systemd_unit_state{state=\"failed\"} == 1", "instant": true, "range": false, "format": "table" }
+      ],
+      "transformations": [
+        { "id": "organize", "options": { "excludeByName": { "Time": true, "Value": true, "__name__": true, "state": true } } }
+      ],
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "options": { "showHeader": true }
+    },
+    {
+      "id": 8,
+      "type": "bargauge",
+      "title": "least free disk (now)",
+      "gridPos": { "x": 0, "y": 18, "w": 8, "h": 9 },
+      "datasource": { "type": "victoriametrics-metrics-datasource", "uid": "${datasource}" },
+      "targets": [
+        { "refId": "A", "expr": "bottomk(10, node_filesystem_free:ratio)", "legendFormat": "{{instance}} {{mountpoint}}", "instant": true, "range": false }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit", "min": 0, "max": 1,
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "red", "value": null }, { "color": "orange", "value": 0.05 }, { "color": "green", "value": 0.15 } ] }
+        },
+        "overrides": []
+      },
+      "options": { "orientation": "horizontal", "displayMode": "basic", "showUnfilled": true, "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } }
+    },
+    {
+      "id": 9,
+      "type": "bargauge",
+      "title": "least free disk (7-day min)",
+      "gridPos": { "x": 8, "y": 18, "w": 8, "h": 9 },
+      "datasource": { "type": "victoriametrics-metrics-datasource", "uid": "${datasource}" },
+      "targets": [
+        { "refId": "A", "expr": "bottomk(10, min_over_time(node_filesystem_free:ratio[7d]) and node_filesystem_free:ratio)", "legendFormat": "{{instance}} {{mountpoint}}", "instant": true, "range": false }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit", "min": 0, "max": 1,
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "red", "value": null }, { "color": "orange", "value": 0.05 }, { "color": "green", "value": 0.15 } ] }
+        },
+        "overrides": []
+      },
+      "options": { "orientation": "horizontal", "displayMode": "basic", "showUnfilled": true, "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } }
+    },
+    {
+      "id": 10,
+      "type": "bargauge",
+      "title": "days until full (last 6h rate)",
+      "description": "only filesystems that are filling. a rough trend, not a promise.",
+      "gridPos": { "x": 16, "y": 18, "w": 8, "h": 9 },
+      "datasource": { "type": "victoriametrics-metrics-datasource", "uid": "${datasource}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "bottomk(10, node_filesystem_avail_bytes{fstype!~\"tmpfs|ramfs|squashfs|overlay|efivarfs\"} / (-deriv(node_filesystem_avail_bytes{fstype!~\"tmpfs|ramfs|squashfs|overlay|efivarfs\"}[6h]) > 0) / 86400)",
+          "legendFormat": "{{instance}} {{mountpoint}}", "instant": true, "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "d", "min": 0,
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "red", "value": null }, { "color": "orange", "value": 2 }, { "color": "green", "value": 14 } ] }
+        },
+        "overrides": []
+      },
+      "options": { "orientation": "horizontal", "displayMode": "basic", "showUnfilled": false, "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } }
+    },
+    {
+      "id": 11,
+      "type": "bargauge",
+      "title": "lowest available memory",
+      "gridPos": { "x": 0, "y": 27, "w": 12, "h": 9 },
+      "datasource": { "type": "victoriametrics-metrics-datasource", "uid": "${datasource}" },
+      "targets": [
+        { "refId": "A", "expr": "bottomk(10, node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)", "legendFormat": "{{instance}}", "instant": true, "range": false }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit", "min": 0, "max": 1,
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "red", "value": null }, { "color": "orange", "value": 0.05 }, { "color": "green", "value": 0.15 } ] }
+        },
+        "overrides": []
+      },
+      "options": { "orientation": "horizontal", "displayMode": "basic", "showUnfilled": true, "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } }
+    },
+    {
+      "id": 12,
+      "type": "bargauge",
+      "title": "highest load (15m, per cpu)",
+      "gridPos": { "x": 12, "y": 27, "w": 12, "h": 9 },
+      "datasource": { "type": "victoriametrics-metrics-datasource", "uid": "${datasource}" },
+      "targets": [
+        { "refId": "A", "expr": "topk(10, node_load15 / on(instance) group_left count by (instance) (node_cpu_seconds_total{mode=\"idle\"}))", "legendFormat": "{{instance}}", "instant": true, "range": false }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit", "min": 0,
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "orange", "value": 0.8 }, { "color": "red", "value": 1.5 } ] }
+        },
+        "overrides": []
+      },
+      "options": { "orientation": "horizontal", "displayMode": "basic", "showUnfilled": true, "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } }
+    }
+  ]
+}

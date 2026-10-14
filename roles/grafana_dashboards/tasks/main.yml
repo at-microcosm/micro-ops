@@ -1,0 +1,37 @@
+---
+# install dashboards from here
+
+- name: check the dashboards dir
+  ansible.builtin.stat:
+    path: "{{ grafana_dashboards_dir }}"
+  register: grafana_dashboards_dir_stat
+
+- name: make sure the dashboards dir exists
+  ansible.builtin.assert:
+    that: grafana_dashboards_dir_stat.stat.isdir | default(false)
+    fail_msg: "{{ grafana_dashboards_dir }} is missing: run playbooks/monitor.yml first (roles/grafana_provisioning creates it)"
+    quiet: true
+
+- name: write dashboards
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "{{ grafana_dashboards_dir }}/{{ item | basename }}"
+    mode: '0644'
+  loop: "{{ lookup('ansible.builtin.fileglob', 'dashboards/*.json', wantlist=True) }}"
+  loop_control:
+    label: "{{ item | basename }}"
+
+- name: find dashboard files
+  ansible.builtin.find:
+    paths: "{{ grafana_dashboards_dir }}"
+    patterns: "*.json"
+  register: grafana_dashboards_found
+
+- name: remove dashboards no longer in the repo
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ grafana_dashboards_found.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  when: item.path | basename not in (lookup('ansible.builtin.fileglob', 'dashboards/*.json', wantlist=True) | map('basename') | list)

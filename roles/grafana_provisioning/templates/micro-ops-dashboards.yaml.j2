@@ -1,0 +1,12 @@
+# Managed by Ansible (roles/grafana_provisioning)
+apiVersion: 1
+providers:
+  - name: micro-ops
+    folder: micro-ops
+    type: file
+    # since changes wouldn't persist back to this repo ("save as" to edit)
+    allowUiUpdates: false
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    options:
+      path: {{ grafana_dashboards_dir }}

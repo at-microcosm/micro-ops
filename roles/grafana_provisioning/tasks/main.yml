@@ -1,0 +1,19 @@
+---
+# make grafana load dashboards from a directory we install them into.
+
+- name: create dashboards dir
+  ansible.builtin.file:
+    path: "{{ grafana_dashboards_dir }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0755'
+
+- name: install dashboards provider
+  ansible.builtin.template:
+    src: micro-ops-dashboards.yaml.j2
+    dest: /etc/grafana/provisioning/dashboards/micro-ops.yaml
+    owner: root
+    group: grafana
+    mode: '0640'
+  notify: restart grafana

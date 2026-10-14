@@ -10,3 +10,4 @@
     - node_exporter
     - alertmanager
     - vmalert
+    - grafana_provisioning

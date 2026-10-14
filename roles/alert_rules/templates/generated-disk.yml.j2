@@ -22,8 +22,9 @@
 #}
 {% macro disk_rules(rec, raw, warn, urgent, unless) %}
       # warning: the 7-day minimum, catches transient spikes
+      # (`and`: only alert on series that still report data)
       - alert: DiskSpaceLow
-        expr: 'min_over_time(node_filesystem_free:ratio{{ rec }}[7d]) < {{ warn }}{{ unless }}'
+        expr: 'min_over_time(node_filesystem_free:ratio{{ rec }}[7d]) < {{ warn }} and node_filesystem_free:ratio{{ rec }}{{ unless }}'
         labels:
           severity: warning
         annotations:
@@ -47,7 +48,7 @@
           summary: {% raw %}"{{ $labels.instance }} {{ $labels.mountpoint }}: space filling quickly, possibly out in under 4h"{% endraw %}
 
       - alert: InodesLow
-        expr: 'min_over_time(node_filesystem_files_free:ratio{{ rec }}[7d]) < {{ warn }}{{ unless }}'
+        expr: 'min_over_time(node_filesystem_files_free:ratio{{ rec }}[7d]) < {{ warn }} and node_filesystem_files_free:ratio{{ rec }}{{ unless }}'
         labels:
           severity: warning
         annotations:

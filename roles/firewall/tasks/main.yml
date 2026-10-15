@@ -18,6 +18,11 @@
     line: IPV6=yes
   notify: reload ufw
 
+# mostly just noise from the public interface in the kernal log
+- name: don't log blocked packets
+  community.general.ufw:
+    logging: 'off'
+
 # ssh, metrics, ansible
 - name: allow everything from the tailnet
   community.general.ufw:

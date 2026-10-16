@@ -39,7 +39,7 @@ plc_ip_burst: 9000
 
 # fail checks when latest op is older than this many seconds
 # (doesn't distinguish between actual plc write gaps or upstream issues etc)
-plc_health_max_lag: 45
+plc_health_max_lag: 90
 plc_health_on_calendar: "*:0/15" # check every 15min
 
 # for $request_time (`nginx_http_response_time_seconds_hist`)

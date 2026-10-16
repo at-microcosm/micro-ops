@@ -8,8 +8,10 @@
 
 - import_playbook: gateway.yml
 - import_playbook: hubble.yml
-# - import_playbook: monitor.yml // runs manually with --ask-become-pass
+- import_playbook: jetstream.yml
 - import_playbook: plc.yml
+
+# no monitor.yml, run manually with --ask-become-pass
 
 # always last
 - import_playbook: scrape-targets.yml

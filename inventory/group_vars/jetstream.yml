@@ -1,0 +1,29 @@
+---
+jetstream_public_host: jetstream.fire.hose.cam
+jetstream_ws_url: wss://relay.fire.hose.cam/xrpc/com.atproto.sync.subscribeRepos
+jetstream_repo: https://github.com/bluesky-social/jetstream-legacy.git
+jetstream_version: 8a65de4eda28bed1cafcbcf25b0cd46ac6f2148b
+jetstream_event_ttl: 24h
+
+# match go.mod
+go_version: "1.26.1"
+go_arch: linux-amd64
+
+jetstream_user: jetstream
+jetstream_home: /home/jetstream
+jetstream_data_dir: /var/lib/jetstream
+
+jetstream_port: 6008
+jetstream_bind: "127.0.0.1:{{ jetstream_port }}"
+jetstream_metrics_port: 6009
+jetstream_metrics_addr: "{{ tailscale_ip }}:{{ jetstream_metrics_port }}"
+
+firewall_public_tcp: [80, 443]
+
+scrape_targets:
+  - job: host
+    port: "{{ node_exporter_port }}"
+    labels:
+      role: jetstream
+  - job: jetstream
+    port: "{{ jetstream_metrics_port }}"

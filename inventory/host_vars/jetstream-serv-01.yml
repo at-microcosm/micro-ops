@@ -1,0 +1,12 @@
+---
+ansible_host: jetstream-serv-01
+tailscale_ip: <TODO>
+public_ipv4: <TODO>
+firewall_enabled: true
+
+# servarica v6: static_ipv6 once the address is assigned
+
+# the old servarica jetstream bridges clients here over the tailnet during the
+# cutover. remove once it's decommissioned.
+jetstream_proxy_real_ip_from:
+  - <TODO old jetstream host's tailscale ip>

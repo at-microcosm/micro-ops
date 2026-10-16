@@ -1,0 +1,70 @@
+---
+
+- name: "deps"
+  ansible.builtin.apt:
+    name:
+      - build-essential # for cgo
+      - git
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: create jetstream user
+  ansible.builtin.user:
+    name: "{{ jetstream_user }}"
+    home: "{{ jetstream_home }}"
+    shell: /bin/bash
+    create_home: true
+
+# data dir: TODO later with full provisioning
+
+- name: clone/update jetstream
+  become: true
+  become_user: "{{ jetstream_user }}"
+  ansible.builtin.git:
+    repo: "{{ jetstream_repo }}"
+    dest: "{{ jetstream_home }}/jetstream"
+    version: "{{ jetstream_version }}"
+  register: jetstream_repo_co
+
+- name: check for a built jetstream
+  ansible.builtin.stat:
+    path: "{{ jetstream_home }}/bin/jetstream"
+  register: jetstream_binary
+
+- name: build jetstream
+  become: true
+  become_user: "{{ jetstream_user }}"
+  ansible.builtin.command:
+    cmd: /usr/local/go/bin/go build -o {{ jetstream_home }}/bin/jetstream -buildvcs=false ./cmd/jetstream
+    chdir: "{{ jetstream_home }}/jetstream"
+  environment:
+    GOTOOLCHAIN: local # use our toolchain or fail. update go_version when go.mod updates
+    CGO_ENABLED: "1"
+    HOME: "{{ jetstream_home }}"
+    GOPATH: "{{ jetstream_home }}/go"
+    GOCACHE: "{{ jetstream_home }}/.cache/go-build"
+  when: jetstream_repo_co.changed or not jetstream_binary.stat.exists or force_build is defined
+  notify: restart jetstream
+
+- name: install jetstream environment file
+  ansible.builtin.template:
+    src: jetstream.env.j2
+    dest: "{{ jetstream_home }}/jetstream.env"
+    owner: "{{ jetstream_user }}"
+    group: "{{ jetstream_user }}"
+    mode: '0640'
+  notify: restart jetstream
+
+- name: install jetstream systemd unit
+  ansible.builtin.template:
+    src: jetstream.service.j2
+    dest: /etc/systemd/system/jetstream.service
+    mode: '0644'
+  notify: restart jetstream
+
+- name: enable and start jetstream
+  ansible.builtin.systemd_service:
+    name: jetstream
+    state: started
+    enabled: true
+    daemon_reload: true

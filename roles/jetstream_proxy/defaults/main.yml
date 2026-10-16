@@ -1,0 +1,3 @@
+---
+# trusted proxies (eg. old host forwarding over tailscale)
+jetstream_proxy_real_ip_from: []

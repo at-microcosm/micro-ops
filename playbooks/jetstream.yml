@@ -1,0 +1,12 @@
+---
+- name: Deploy jetstream
+  hosts: jetstream
+  become: true
+  roles:
+    - base
+    - go_toolchain
+    - jetstream
+    - role: nginx
+      nginx_names:
+        - "{{ jetstream_public_host }}"
+    - jetstream_proxy

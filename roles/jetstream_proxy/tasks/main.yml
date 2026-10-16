@@ -1,0 +1,17 @@
+---
+# run after roles/nginx
+
+- name: install jetstream site
+  ansible.builtin.template:
+    src: jetstream.conf.j2
+    dest: "/etc/nginx/sites-available/{{ jetstream_public_host }}"
+  when: jetstream_public_host in nginx_live_names
+  notify: reload nginx
+
+- name: enable jetstream site
+  ansible.builtin.file:
+    src: "/etc/nginx/sites-available/{{ jetstream_public_host }}"
+    dest: "/etc/nginx/sites-enabled/{{ jetstream_public_host }}"
+    state: link
+  when: jetstream_public_host in nginx_live_names
+  notify: reload nginx

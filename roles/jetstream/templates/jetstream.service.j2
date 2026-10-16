@@ -1,0 +1,23 @@
+# Managed by Ansible (roles/jetstream)
+[Unit]
+Description=jetstream
+Wants=network-online.target
+After=network-online.target
+# keep retrying forever
+StartLimitIntervalSec=0
+# TEMPORARY: don't start until we copy data from the old instance
+ConditionPathExists={{ jetstream_data_dir }}
+
+[Service]
+User={{ jetstream_user }}
+Group={{ jetstream_user }}
+Type=simple
+EnvironmentFile={{ jetstream_home }}/jetstream.env
+WorkingDirectory={{ jetstream_home }}
+ExecStart={{ jetstream_home }}/bin/jetstream
+LimitNOFILE=1048576
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

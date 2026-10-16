@@ -5,4 +5,4 @@ public_ipv4: 155.138.133.71
 public_ipv6: 2001:19f0:b002:4e6:5400:5ff:fe97:4db
 
 # stagger vs other gateway hosts
-os_updates_reboot_time: "07:48"
+os_updates_reboot_time: "18:48"

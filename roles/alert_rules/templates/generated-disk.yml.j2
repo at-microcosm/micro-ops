@@ -24,11 +24,11 @@
       # warning: the 7-day minimum, catches transient spikes
       # (`and`: only alert on series that still report data)
       - alert: DiskSpaceLow
-        expr: 'min_over_time(node_filesystem_free:ratio{{ rec }}[7d]) < {{ warn }} and node_filesystem_free:ratio{{ rec }}{{ unless }}'
+        expr: 'min_over_time(node_filesystem_free:ratio{{ rec }}[26h]) < {{ warn }} and node_filesystem_free:ratio{{ rec }}{{ unless }}'
         labels:
           severity: warning
         annotations:
-          summary: {% raw %}"{{ $labels.instance }} {{ $labels.mountpoint }}: 7-day min free space dropped to {{ $value | humanizePercentage }}"{% endraw %}
+          summary: {% raw %}"{{ $labels.instance }} {{ $labels.mountpoint }}: 1-day min free space dropped to {{ $value | humanizePercentage }}"{% endraw %}
 
       - alert: DiskSpaceCritical
         expr: 'node_filesystem_free:ratio{{ rec }} < {{ urgent }}{{ unless }}'
@@ -48,11 +48,11 @@
           summary: {% raw %}"{{ $labels.instance }} {{ $labels.mountpoint }}: space filling quickly, possibly out in under 4h"{% endraw %}
 
       - alert: InodesLow
-        expr: 'min_over_time(node_filesystem_files_free:ratio{{ rec }}[7d]) < {{ warn }} and node_filesystem_files_free:ratio{{ rec }}{{ unless }}'
+        expr: 'min_over_time(node_filesystem_files_free:ratio{{ rec }}[26h]) < {{ warn }} and node_filesystem_files_free:ratio{{ rec }}{{ unless }}'
         labels:
           severity: warning
         annotations:
-          summary: {% raw %}"{{ $labels.instance }} {{ $labels.mountpoint }}: 7-day free inodes dropped to {{ $value | humanizePercentage }}"{% endraw %}
+          summary: {% raw %}"{{ $labels.instance }} {{ $labels.mountpoint }}: 1-day free inodes dropped to {{ $value | humanizePercentage }}"{% endraw %}
 
       - alert: InodesCritical
         expr: 'node_filesystem_files_free:ratio{{ rec }} < {{ urgent }}{{ unless }}'

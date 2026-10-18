@@ -35,3 +35,16 @@ hubble_tuning_args:
   - --max-plc-scheduled-requests 32
   - --zstd-level -4
   - --gzip-level 1
+
+# app on pi is turned off for now
+scrape_targets:
+  - job: host
+    port: "{{ node_exporter_port }}"
+    labels:
+      role: hubble
+  # - job: hubble
+  #   port: "{{ hubble_metrics_port }}"
+  # - job: nginx
+  #   port: "{{ nginxlog_exporter_port }}"
+  #   labels:
+  #     role: hubble

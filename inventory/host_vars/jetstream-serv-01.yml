@@ -1,12 +1,17 @@
 ---
 ansible_host: jetstream-serv-01
-tailscale_ip: <TODO>
-public_ipv4: <TODO>
+public_ipv4: 38.49.215.194
+tailscale_ip: 100.118.230.84
+# public_ipv6: TODO (once assigned by servarica)
+
+# servarica v6
+# static_ipv6_enabled: true
+# static_ipv6_netplan_id: eth0 # verify at /etc/netplan/50-cloud-init.yaml
+# public_ipv6_prefix_len: 64
+# public_ipv6_gateway: TODO
+
 firewall_enabled: true
 
-# servarica v6: static_ipv6 once the address is assigned
-
-# the old servarica jetstream bridges clients here over the tailnet during the
-# cutover. remove once it's decommissioned.
+# bridged from old server until all clients get on here directly
 jetstream_proxy_real_ip_from:
-  - <TODO old jetstream host's tailscale ip>
+  - 100.121.215.34

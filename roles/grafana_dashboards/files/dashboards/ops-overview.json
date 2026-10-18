@@ -163,11 +163,11 @@
     {
       "id": 9,
       "type": "bargauge",
-      "title": "least free disk (7-day min)",
+      "title": "least free disk (26h min)",
       "gridPos": { "x": 8, "y": 18, "w": 8, "h": 9 },
       "datasource": { "type": "victoriametrics-metrics-datasource", "uid": "${datasource}" },
       "targets": [
-        { "refId": "A", "expr": "bottomk(10, min_over_time(node_filesystem_free:ratio[7d]) and node_filesystem_free:ratio)", "legendFormat": "{{instance}} {{mountpoint}}", "instant": true, "range": false }
+        { "refId": "A", "expr": "bottomk(10, min_over_time(node_filesystem_free:ratio[26h]) and node_filesystem_free:ratio)", "legendFormat": "{{instance}} {{mountpoint}}", "instant": true, "range": false }
       ],
       "fieldConfig": {
         "defaults": {

@@ -21,7 +21,7 @@
   raw: selector for raw node_filesystem_* series (always includes the fs filter)
 #}
 {% macro disk_rules(rec, raw, warn, urgent, unless) %}
-      # warning: the 7-day minimum, catches transient spikes
+      # warning: the minimum, catches transient spikes
       # (`and`: only alert on series that still report data)
       - alert: DiskSpaceLow
         expr: 'min_over_time(node_filesystem_free:ratio{{ rec }}[26h]) < {{ warn }} and node_filesystem_free:ratio{{ rec }}{{ unless }}'

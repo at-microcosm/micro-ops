@@ -17,7 +17,7 @@ plc_repo: https://github.com/did-method-plc/go-didplc.git
 plc_version: 9833fa2c645d26b0200d3cfb60a529c85be47fac
 
 # match go.mod
-go_version: "1.26.1"
+go_version: "1.26.10"
 go_arch: linux-amd64
 
 plc_data_dir: /var/lib/plc

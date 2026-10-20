@@ -1,0 +1,40 @@
+---
+# install pending security updates immediately
+#
+# unattended-upgrades will get them daily otherwise.
+#
+# excludes `monitor` since it needs --ask-become-pass
+#
+# works on hosts outside of inventory,
+#
+#   ansible-playbook playbooks/security-updates.yml -i 'hostname,'
+#
+- name: Security updates now
+  hosts: all:!monitor
+  become: true
+  gather_facts: false
+  tasks:
+    - name: refresh package lists
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: run unattended-upgrades
+      ansible.builtin.command: unattended-upgrade -v
+      register: security_updates_uu
+      changed_when: "'Packages that will be upgraded' in (security_updates_uu.stdout ~ security_updates_uu.stderr)"
+
+    - name: read the ca-certificates version
+      ansible.builtin.command: dpkg-query -W -f=${Version} ca-certificates
+      register: security_updates_ca
+      changed_when: false
+
+    - name: check for a pending reboot
+      ansible.builtin.stat:
+        path: /var/run/reboot-required
+      register: security_updates_reboot
+
+    - name: report
+      ansible.builtin.debug:
+        msg: >-
+          ca-certificates {{ security_updates_ca.stdout }}{{
+          ', reboot required' if security_updates_reboot.stat.exists else '' }}

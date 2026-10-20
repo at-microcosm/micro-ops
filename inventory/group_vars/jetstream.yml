@@ -6,7 +6,7 @@ jetstream_version: 8a65de4eda28bed1cafcbcf25b0cd46ac6f2148b
 jetstream_event_ttl: 24h
 
 # match go.mod
-go_version: "1.26.1"
+go_version: "1.26.10"
 go_arch: linux-amd64
 
 jetstream_user: jetstream

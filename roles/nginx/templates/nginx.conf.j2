@@ -34,7 +34,7 @@ http {
     ssl_session_tickets off;
 
     # websockets still get http/1.1
-    http2 on;
+    http2 off; # until CVE-2026-123007 and CVE-2026-123633 fixes land  in ubuntu
 
     ##
     # logs

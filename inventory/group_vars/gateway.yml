@@ -7,6 +7,7 @@ gateway_sites:
     upstream_port: 6789
     upstreams:
       - host: mikrokosmos
+        backup: false
       - host: orion
         backup: true
 
@@ -22,7 +23,7 @@ gateway_sites:
     log: spacedust
     upstream_port: 9998
     upstreams:
-      - host: arietids
+      - host: mikrokosmos
 
   # ancient, deprecated, redirects. gets ~dozen or so real-seeming hits per day?
   - name: links.bsky.bad-example.com
